@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS programs (
     config TEXT DEFAULT '{}',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    suggested_next_phase TEXT DEFAULT NULL,
     FOREIGN KEY (athlete_id) REFERENCES athletes(id)
 );
 
@@ -100,6 +101,22 @@ CREATE TABLE IF NOT EXISTS program_exercises (
     FOREIGN KEY (session_id) REFERENCES program_sessions(id) ON DELETE CASCADE,
     FOREIGN KEY (exercise_id) REFERENCES exercises(id)
 );
+
+CREATE TABLE IF NOT EXISTS weekly_prescriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    program_exercise_id INTEGER NOT NULL,
+    week_number INTEGER NOT NULL,
+    sets_prescribed INTEGER NOT NULL,
+    reps_prescribed TEXT NOT NULL,
+    intensity_pct REAL,
+    target_weight REAL,
+    target_rpe REAL,
+    FOREIGN KEY (program_exercise_id) REFERENCES program_exercises(id) ON DELETE CASCADE,
+    UNIQUE(program_exercise_id, week_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_weekly_prescriptions_pe
+    ON weekly_prescriptions(program_exercise_id);
 
 CREATE TABLE IF NOT EXISTS workout_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -182,4 +199,9 @@ CREATE INDEX IF NOT EXISTS idx_one_rep_maxes_athlete_exercise
 
 def init_schema(db):
     db.executescript(SCHEMA)
+    # Migration: add columns if missing
+    try:
+        db.execute("ALTER TABLE programs ADD COLUMN suggested_next_phase TEXT DEFAULT NULL")
+    except Exception:
+        pass  # Column already exists
     db.commit()
