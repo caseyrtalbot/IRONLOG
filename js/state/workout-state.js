@@ -21,6 +21,7 @@ export const restTimer = {
 };
 
 export function resetWorkout() {
+    clearInterval(activeWorkout.timerInterval);
     Object.assign(activeWorkout, {
         running: false,
         startTime: null,
