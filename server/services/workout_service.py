@@ -120,8 +120,11 @@ def get_workout_detail(db, workout_id: int) -> dict | None:
     return result
 
 
-def delete_workout(db, workout_id: int) -> dict:
-    """Delete a workout and its sets. Returns status dict."""
+def delete_workout(db, workout_id: int) -> dict | None:
+    """Delete a workout and its sets. Returns status dict or None if not found."""
+    workout = db.execute("SELECT id FROM workout_logs WHERE id = ?", [workout_id]).fetchone()
+    if not workout:
+        return None
     db.execute("DELETE FROM set_logs WHERE workout_log_id = ?", [workout_id])
     db.execute("DELETE FROM workout_logs WHERE id = ?", [workout_id])
     db.commit()

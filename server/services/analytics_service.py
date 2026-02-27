@@ -6,7 +6,6 @@ All functions receive a DB cursor and typed arguments; they never touch HTTP.
 Delegates computation to server.algorithms where applicable.
 """
 
-from server.algorithms.e1rm import estimate_1rm
 from server.algorithms.overload import recommend_overload
 from server.algorithms.phase_config import generate_phase_config as _generate_phase_config
 from server.models.analytics import VolumeLandmarksSave
@@ -22,7 +21,7 @@ def get_e1rm(db, athlete_id: int, exercise_id: int | None = None, days: int = 90
     If exercise_id is given, return current e1RM + trend for that exercise.
     Otherwise return the latest e1RM for every exercise the athlete has logged.
     """
-    if exercise_id:
+    if exercise_id is not None:
         trend = _calculate_e1rm_trend(db, athlete_id, exercise_id, days)
         current = db.execute(
             """

@@ -9,7 +9,7 @@ class ProgramGenerate(BaseModel):
         "strength", "hypertrophy", "power", "endurance", "general"
     ] = "strength"
     phase: Literal[
-        "accumulation", "intensification", "realization", "deload", "transition"
+        "accumulation", "intensification", "realization", "deload"
     ] = "accumulation"
     split: Literal["upper_lower", "push_pull_legs", "full_body"] = "upper_lower"
     weeks: int = 4
