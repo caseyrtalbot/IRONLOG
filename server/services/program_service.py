@@ -165,6 +165,113 @@ def get_current_week_prescriptions(db, program_id, session_id):
     return [dict(r) for r in rows]
 
 
+def get_program_retrospective(db, program_id: int) -> dict | None:
+    """
+    Generate end-of-program summary: volume per muscle, e1RM changes,
+    compliance rate, RPE trend, body weight change.
+    """
+    program = db.execute(
+        "SELECT * FROM programs WHERE id = ?", [program_id]
+    ).fetchone()
+    if not program:
+        return None
+
+    athlete_id = program["athlete_id"]
+
+    # Date range of this program's workouts
+    date_range = db.execute("""
+        SELECT MIN(date) as start_date, MAX(date) as end_date, COUNT(*) as total_sessions
+        FROM workout_logs WHERE program_id = ?
+    """, [program_id]).fetchone()
+
+    if not date_range or not date_range["start_date"]:
+        return {"program": dict(program), "status": "no_data"}
+
+    # 1. Volume per muscle accumulated during this program
+    volume_per_muscle = db.execute("""
+        SELECT em.muscle_group,
+               ROUND(SUM(em.contribution), 1) as total_effective_sets,
+               ROUND(SUM(sl.weight * sl.reps * em.contribution)) as total_volume_load
+        FROM set_logs sl
+        JOIN workout_logs wl ON sl.workout_log_id = wl.id
+        JOIN exercise_muscles em ON sl.exercise_id = em.exercise_id
+        WHERE wl.program_id = ? AND sl.set_type = 'working'
+        GROUP BY em.muscle_group
+        ORDER BY total_effective_sets DESC
+    """, [program_id]).fetchall()
+
+    # 2. e1RM changes: compare first vs last for each exercise in the program
+    e1rm_changes = db.execute("""
+        SELECT e.name,
+               first_orm.estimated_1rm as starting_e1rm,
+               last_orm.estimated_1rm as ending_e1rm,
+               ROUND(last_orm.estimated_1rm - first_orm.estimated_1rm, 1) as change
+        FROM (
+            SELECT DISTINCT sl.exercise_id
+            FROM set_logs sl
+            JOIN workout_logs wl ON sl.workout_log_id = wl.id
+            WHERE wl.program_id = ? AND sl.set_type = 'working'
+        ) used_exercises
+        JOIN exercises e ON e.id = used_exercises.exercise_id
+        LEFT JOIN one_rep_maxes first_orm ON first_orm.exercise_id = e.id
+            AND first_orm.athlete_id = ?
+            AND first_orm.date = (
+                SELECT MIN(date) FROM one_rep_maxes
+                WHERE exercise_id = e.id AND athlete_id = ? AND date >= ?
+            )
+        LEFT JOIN one_rep_maxes last_orm ON last_orm.exercise_id = e.id
+            AND last_orm.athlete_id = ?
+            AND last_orm.date = (
+                SELECT MAX(date) FROM one_rep_maxes
+                WHERE exercise_id = e.id AND athlete_id = ? AND date <= ?
+            )
+        WHERE first_orm.estimated_1rm IS NOT NULL AND last_orm.estimated_1rm IS NOT NULL
+        ORDER BY change DESC
+    """, [
+        program_id, athlete_id, athlete_id, date_range["start_date"],
+        athlete_id, athlete_id, date_range["end_date"],
+    ]).fetchall()
+
+    # 3. RPE trend across sessions
+    rpe_trend = db.execute("""
+        SELECT date, session_rpe
+        FROM workout_logs
+        WHERE program_id = ? AND session_rpe IS NOT NULL
+        ORDER BY date
+    """, [program_id]).fetchall()
+
+    # 4. Body weight change
+    bw_start = db.execute("""
+        SELECT body_weight FROM workout_logs
+        WHERE program_id = ? AND body_weight IS NOT NULL
+        ORDER BY date ASC LIMIT 1
+    """, [program_id]).fetchone()
+    bw_end = db.execute("""
+        SELECT body_weight FROM workout_logs
+        WHERE program_id = ? AND body_weight IS NOT NULL
+        ORDER BY date DESC LIMIT 1
+    """, [program_id]).fetchone()
+
+    return {
+        "program": dict(program),
+        "date_range": {
+            "start": date_range["start_date"],
+            "end": date_range["end_date"],
+            "total_sessions": date_range["total_sessions"],
+        },
+        "volume_per_muscle": [dict(r) for r in volume_per_muscle],
+        "e1rm_changes": [dict(r) for r in e1rm_changes],
+        "rpe_trend": [{"date": r["date"], "rpe": r["session_rpe"]} for r in rpe_trend],
+        "body_weight": {
+            "start": bw_start["body_weight"] if bw_start else None,
+            "end": bw_end["body_weight"] if bw_end else None,
+            "change": round(bw_end["body_weight"] - bw_start["body_weight"], 1)
+                if bw_start and bw_end and bw_start["body_weight"] and bw_end["body_weight"]
+                else None,
+        },
+    }
+
+
 # ---------------------------------------------------------------------------
 # Private helpers — session generation
 # ---------------------------------------------------------------------------
