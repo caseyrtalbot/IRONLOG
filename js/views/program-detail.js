@@ -1,7 +1,7 @@
 // js/views/program-detail.js — Single program detail view
 
 import { state } from '../state/store.js';
-import { getProgram } from '../api/programs.js';
+import { getProgram, getProgramRetrospective } from '../api/programs.js';
 import { $id } from '../lib/dom.js';
 import { capitalize, formatGoal, formatPhase } from '../lib/format.js';
 
@@ -170,6 +170,63 @@ function renderVolumeSummary(volumeSummary) {
     </div>`;
 }
 
+// ── Program Retrospective ────────────────────────────
+
+async function renderRetrospective(programId) {
+    try {
+        const retro = await getProgramRetrospective(programId);
+        if (!retro || retro.status === 'no_data') return '';
+
+        const e1rmRows = (retro.e1rm_changes || []).slice(0, 8).map(e => `
+            <div class="flex-between" style="padding:6px 0;border-bottom:1px solid var(--border-dim)">
+                <div style="font-size:12px;font-weight:600">${e.name}</div>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <span style="font-size:11px;color:var(--gray-dim)">${e.starting_e1rm?.toFixed(0) || '—'} →</span>
+                    <span class="mono ${e.change > 0 ? 'text-green' : e.change < 0 ? 'text-red' : 'text-dim'}" style="font-size:14px;font-weight:700">
+                        ${e.ending_e1rm?.toFixed(0) || '—'} lbs
+                    </span>
+                    <span style="font-size:10px;color:${e.change > 0 ? 'var(--green)' : 'var(--red)'}">${e.change > 0 ? '+' : ''}${e.change?.toFixed(1) || '0'}</span>
+                </div>
+            </div>`).join('');
+
+        const formatPattern = (str) => str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+        const volumeRows = (retro.volume_per_muscle || []).slice(0, 10).map(v => `
+            <div class="flex-between" style="padding:4px 0">
+                <span style="font-size:12px">${formatPattern(v.muscle_group)}</span>
+                <span class="mono text-amber" style="font-size:12px">${v.total_effective_sets} sets</span>
+            </div>`).join('');
+
+        const bw = retro.body_weight;
+        const bwHtml = bw && bw.start && bw.end
+            ? `<div style="font-size:12px;color:var(--gray-mid)">Body weight: ${bw.start} → ${bw.end} lbs (${bw.change > 0 ? '+' : ''}${bw.change})</div>`
+            : '';
+
+        return `
+        <div style="padding:0 16px 14px">
+            <div style="background:var(--bg-card);border:1px solid var(--border-dim);border-radius:var(--radius-md);overflow:hidden">
+                <div style="padding:12px 14px;border-bottom:1px solid var(--border-dim)">
+                    <div style="font-size:13px;font-weight:700;letter-spacing:0.03em;text-transform:uppercase;color:var(--gray-bright)">Program Retrospective</div>
+                    <div style="font-size:11px;color:var(--gray-dim);margin-top:2px">${retro.date_range.total_sessions} sessions · ${retro.date_range.start} to ${retro.date_range.end}</div>
+                    ${bwHtml}
+                </div>
+                ${e1rmRows ? `
+                <div style="padding:12px 14px;border-bottom:1px solid var(--border-dim)">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray-dim);margin-bottom:8px">Strength Changes</div>
+                    ${e1rmRows}
+                </div>` : ''}
+                ${volumeRows ? `
+                <div style="padding:12px 14px">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray-dim);margin-bottom:8px">Total Volume Per Muscle</div>
+                    ${volumeRows}
+                </div>` : ''}
+            </div>
+        </div>`;
+    } catch (e) {
+        return '';
+    }
+}
+
 // ── Main Render ──────────────────────────────────────
 
 export async function selectProgram(programId) {
@@ -209,6 +266,9 @@ export async function selectProgram(programId) {
         const volumeHtml = renderVolumeSummary(volumeSummary);
         const weekTabsHtml = renderWeekTabs(prog, detailWeek);
         const nextPhaseHtml = renderNextPhaseButton(prog);
+        const retroHtml = prog.status === 'completed'
+            ? await renderRetrospective(programId)
+            : '';
 
         vc.innerHTML = `
       <div class="view">
@@ -233,6 +293,7 @@ export async function selectProgram(programId) {
         ${weekTabsHtml}
         ${volumeHtml}
         ${nextPhaseHtml}
+        ${retroHtml}
         ${sessionsHtml || '<div class="empty-state"><h3>No sessions</h3></div>'}
       </div>`;
     } catch (e) {

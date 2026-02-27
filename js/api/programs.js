@@ -16,3 +16,7 @@ export function generateProgram(data) {
 export function getSessionPrescriptions(programId, sessionId) {
     return get(`programs/${programId}/sessions/${sessionId}/prescriptions`);
 }
+
+export function getProgramRetrospective(programId) {
+    return get(`programs/${programId}/retrospective`);
+}
