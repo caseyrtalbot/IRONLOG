@@ -39,9 +39,15 @@ export function formatPattern(p) {
 export function formatGoal(g) { return GOAL_INFO[g]?.label || capitalize(g); }
 export function formatPhase(p) { return PHASE_INFO[p]?.label || capitalize(p); }
 
+export function dotsHtml(filled, total=5) {
+  let h = '<div class="dots-rating">';
+  for (let i=1;i<=total;i++) h += `<div class="dot ${i<=filled?'filled':'empty'}"></div>`;
+  return h + '</div>';
+}
+
 export function getTimeOfDay() {
   const h = new Date().getHours();
-  if (h < 12) return 'morning';
-  if (h < 17) return 'afternoon';
-  return 'evening';
+  if (h < 12) return 'MORNING';
+  if (h < 17) return 'AFTERNOON';
+  return 'EVENING';
 }
