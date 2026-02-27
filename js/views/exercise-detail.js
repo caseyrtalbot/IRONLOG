@@ -84,7 +84,10 @@ export async function viewExerciseDetail(exId) {
     // Load e1RM trend
     try {
         const e1rmData = await getE1rm(exId, 90);
-        const history = e1rmData.history || [];
+        const history = (e1rmData.history || e1rmData.trend || []).map(h => ({
+            ...h,
+            estimated_1rm: h.estimated_1rm ?? h.e1rm,
+        }));
         // Volume landmark display
         const vlmEl = $id('vlm-detail');
         if (vlmEl) {
@@ -160,12 +163,14 @@ export async function viewExerciseDetail(exId) {
         const rec = await getOverloadRec(exId);
         const overloadEl = $id('overload-detail');
         if (overloadEl) {
-            overloadEl.innerHTML = rec.recommendation
+            const recTitle = rec.recommendation || rec.rationale;
+            const recDetails = rec.details || (rec.suggested_weight ? `Suggested: ${rec.suggested_weight} lbs x ${rec.suggested_reps} reps` : '');
+            overloadEl.innerHTML = recTitle
                 ? `<div style="display:flex;gap:10px;align-items:flex-start">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="#F5A623" flex-shrink:0><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             <div>
-              <div style="font-weight:700;font-size:14px;color:var(--white)">${rec.recommendation}</div>
-              ${rec.details ? `<div style="font-size:12px;color:var(--gray-mid);margin-top:4px">${rec.details}</div>` : ''}
+              <div style="font-weight:700;font-size:14px;color:var(--white)">${recTitle}</div>
+              ${recDetails ? `<div style="font-size:12px;color:var(--gray-mid);margin-top:4px">${recDetails}</div>` : ''}
             </div>
            </div>`
                 : `<div class="text-dim text-sm">No recommendation available yet. Log more data.</div>`;

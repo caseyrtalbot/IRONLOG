@@ -41,7 +41,7 @@ export async function renderWorkout() {
             getPrograms(),
             Promise.resolve(state.athlete || await getAthlete()),
         ]);
-        const programs = programsRes.programs || [];
+        const programs = programsRes.programs || (Array.isArray(programsRes) ? programsRes : []);
         const activePrograms = programs.filter(p => p.status === 'active');
 
         let sessionsHtml = '';

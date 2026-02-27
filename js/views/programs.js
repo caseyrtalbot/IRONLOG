@@ -25,7 +25,7 @@ export async function renderPrograms() {
 
     try {
         const res = await getPrograms();
-        const programs = res.programs || [];
+        const programs = res.programs || (Array.isArray(res) ? res : []);
         state.programs = programs;
 
         const list = $id('programs-list');

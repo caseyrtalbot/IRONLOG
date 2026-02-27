@@ -37,8 +37,12 @@ export async function renderDashboard() {
         const athlete = state.athlete || {};
         const firstName = (athlete.name || 'Athlete').split(' ')[0];
         const streak = data.streak || 0;
-        const totalWorkouts = data.total_workouts || 0;
-        const recentPRs = data.recent_prs || [];
+        const totalWorkouts = data.totals?.total_workouts || data.total_workouts || 0;
+        const recentPRs = (data.recent_prs || []).map(pr => ({
+            ...pr,
+            exercise_name: pr.exercise_name || pr.name,
+            estimated_1rm: pr.estimated_1rm ?? pr.best_e1rm,
+        }));
         const recentWorkouts = data.recent_workouts || [];
         const activeProgram = data.active_program || null;
 
@@ -83,12 +87,13 @@ export async function renderDashboard() {
         if (recentWorkouts.length) {
             workoutsHtml = recentWorkouts.slice(0, 7).map(w => {
                 const rpeColor_ = w.session_rpe ? (w.session_rpe >= 9 ? 'rpe-red' : w.session_rpe >= 7.5 ? 'rpe-amber' : 'rpe-green') : '';
+                const vol = w.total_volume || w.volume_load;
                 return `
           <div class="workout-history-item" onclick="viewWorkout(${w.id})">
             <div class="wh-date">${fmtDate(w.date)}</div>
             <div class="wh-info">
               <div class="wh-title">${w.notes || (w.session_name || 'Workout')}</div>
-              <div class="wh-meta">${fmtDuration(w.duration_min)} \u00b7 ${w.total_volume ? Math.round(w.total_volume).toLocaleString() + ' lbs' : '\u2014'}</div>
+              <div class="wh-meta">${fmtDuration(w.duration_min)} \u00b7 ${vol ? Math.round(vol).toLocaleString() + ' lbs' : '\u2014'}</div>
             </div>
             <div class="wh-rpe ${rpeColor_}">${w.session_rpe || '\u2014'}</div>
           </div>`;

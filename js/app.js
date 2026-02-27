@@ -51,7 +51,10 @@ async function initApp() {
 
     // Prefetch exercises in background
     getExercises().then(res => { state.exercises = res.exercises || res || []; });
-    getMovementPatterns().then(res => { state.movementPatterns = res.patterns || res || []; });
+    getMovementPatterns().then(res => {
+      const raw = res.patterns || res || [];
+      state.movementPatterns = raw.map(p => typeof p === 'string' ? p : p.movement_pattern).filter(Boolean);
+    });
     getMuscleGroups().then(res => { state.muscleGroups = res.groups || res || []; });
 
     // Hide loader
@@ -113,7 +116,10 @@ function showOnboarding() {
 
       // Prefetch
       getExercises().then(r => { state.exercises = r.exercises || r || []; });
-      getMovementPatterns().then(r => { state.movementPatterns = r.patterns || r || []; });
+      getMovementPatterns().then(r => {
+        const raw = r.patterns || r || [];
+        state.movementPatterns = raw.map(p => typeof p === 'string' ? p : p.movement_pattern).filter(Boolean);
+      });
       getMuscleGroups().then(r => { state.muscleGroups = r.groups || r || []; });
 
       initRouter();

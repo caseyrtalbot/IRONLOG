@@ -53,15 +53,26 @@ async function loadAnalyticsData() {
             getAnalytics(days, 'volume').catch(() => null),
             getAnalytics(days, 'frequency').catch(() => null),
             getAnalytics(days, 'muscle_volume').catch(() => null),
-            getWorkouts(50).catch(() => ({ workouts: [] })),
-            getAllE1rms().catch(() => ({ exercises: [] })),
+            getWorkouts(50).catch(() => []),
+            getAllE1rms().catch(() => []),
         ]);
 
-        const workouts = workoutsData.workouts || [];
-        const e1rms = e1rmData.exercises || [];
-        const volumePoints = volumeData?.data || [];
-        const musclePoints = muscleData?.data || [];
-        const freqPoints = freqData?.data || [];
+        const workouts = Array.isArray(workoutsData) ? workoutsData : (workoutsData.workouts || []);
+        const e1rms = (Array.isArray(e1rmData) ? e1rmData : (e1rmData.exercises || [])).map(e => ({
+            ...e,
+            exercise_name: e.exercise_name || e.name,
+        }));
+        const volumePoints = Array.isArray(volumeData) ? volumeData : (volumeData?.data || []);
+        const musclePoints = (Array.isArray(muscleData) ? muscleData : (muscleData?.data || [])).map(p => ({
+            ...p,
+            muscle_group: p.muscle_group || p.primary_muscles,
+            sets: p.sets ?? p.total_sets,
+            volume: p.volume ?? p.total_volume,
+        }));
+        const freqPoints = (Array.isArray(freqData) ? freqData : (freqData?.data || [])).map(p => ({
+            ...p,
+            count: p.count ?? p.session_count ?? p.total_sets,
+        }));
 
         // Build heat calendar from workout dates
         const workoutDates = new Set(workouts.map(w => w.date?.split('T')[0] || w.date));
@@ -233,7 +244,7 @@ async function loadVolumeEditor() {
     if (!editor) return;
     try {
         const res = await getVolumeLandmarks();
-        const landmarks = res.landmarks || [];
+        const landmarks = Array.isArray(res) ? res : (res.landmarks || []);
         if (!landmarks.length) { editor.innerHTML = `<div class="text-dim text-sm">No volume landmarks configured. Go to Profile to set them up.</div>`; return; }
         editor.innerHTML = `<div>${landmarks.map(l => `
       <div class="vlm-editor-row">

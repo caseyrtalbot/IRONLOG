@@ -34,7 +34,8 @@ export async function renderExercises() {
         ]);
 
         state.exercises = exRes.exercises || exRes || [];
-        state.movementPatterns = patternsRes.patterns || patternsRes || [];
+        const rawPatterns = patternsRes.patterns || patternsRes || [];
+        state.movementPatterns = rawPatterns.map(p => typeof p === 'string' ? p : p.movement_pattern).filter(Boolean);
         state.muscleGroups = musclesRes.groups || musclesRes || [];
 
         const equipmentOptions = [...new Set(state.exercises.map(e => e.equipment).filter(Boolean))].sort();

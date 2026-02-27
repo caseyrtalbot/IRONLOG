@@ -26,8 +26,8 @@ export async function renderProfile() {
     try {
         const athlete = state.athlete || await getAthlete();
         state.athlete = athlete;
-        const [vlmRes] = await Promise.all([getVolumeLandmarks().catch(() => ({ landmarks: [] }))]);
-        const landmarks = vlmRes.landmarks || [];
+        const [vlmRes] = await Promise.all([getVolumeLandmarks().catch(() => [])]);
+        const landmarks = Array.isArray(vlmRes) ? vlmRes : (vlmRes.landmarks || []);
 
         const content = $id('profile-content');
         content.innerHTML = `
