@@ -87,7 +87,7 @@ export async function renderDashboard() {
         if (recentWorkouts.length) {
             workoutsHtml = recentWorkouts.slice(0, 7).map(w => {
                 const rpeColor_ = w.session_rpe ? (w.session_rpe >= 9 ? 'rpe-red' : w.session_rpe >= 7.5 ? 'rpe-amber' : 'rpe-green') : '';
-                const vol = w.total_volume || w.volume_load;
+                const vol = w.total_volume ?? w.volume_load;
                 return `
           <div class="workout-history-item" onclick="viewWorkout(${w.id})">
             <div class="wh-date">${fmtDate(w.date)}</div>

@@ -61,6 +61,7 @@ async function loadAnalyticsData() {
         const e1rms = (Array.isArray(e1rmData) ? e1rmData : (e1rmData.exercises || [])).map(e => ({
             ...e,
             exercise_name: e.exercise_name || e.name,
+            estimated_1rm: e.estimated_1rm ?? e.e1rm,
         }));
         const volumePoints = Array.isArray(volumeData) ? volumeData : (volumeData?.data || []);
         const musclePoints = (Array.isArray(muscleData) ? muscleData : (muscleData?.data || [])).map(p => ({
