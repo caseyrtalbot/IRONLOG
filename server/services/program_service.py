@@ -59,6 +59,12 @@ def get_program_detail(db, program_id: int) -> dict | None:
         s["exercises"] = [dict(ex) for ex in exercises]
         result["sessions"].append(s)
 
+    # Include volume audit summary
+    try:
+        result["volume_summary"] = _calculate_program_volume(db, program_id)
+    except Exception:
+        result["volume_summary"] = None
+
     return result
 
 
@@ -95,7 +101,15 @@ def generate_program(db, body: ProgramGenerate) -> dict:
         _generate_full_body(db, program_id, config, body.goal, body.days_per_week)
 
     db.commit()
-    return {"id": program_id, "name": program_name, "status": "generated"}
+
+    # Volume audit
+    try:
+        volume_summary = _calculate_program_volume(db, program_id)
+    except Exception:
+        volume_summary = None
+
+    return {"id": program_id, "name": program_name, "status": "generated",
+            "volume_summary": volume_summary}
 
 
 # ---------------------------------------------------------------------------
@@ -377,3 +391,44 @@ def _add_exercise_by_pattern(
             [session_id, row["id"], order, superset_group, sets, reps,
              intensity_type, intensity_value, rest],
         )
+
+
+def _calculate_program_volume(db, program_id):
+    """Calculate projected weekly volume for a generated program."""
+    from server.algorithms.volume_budget import calculate_projected_volume, audit_volume
+
+    exercises = db.execute("""
+        SELECT pe.sets_prescribed, pe.exercise_id
+        FROM program_exercises pe
+        JOIN program_sessions ps ON pe.session_id = ps.id
+        WHERE ps.program_id = ?
+    """, [program_id]).fetchall()
+
+    program_exercises = []
+    for ex in exercises:
+        muscles = db.execute("""
+            SELECT muscle_group, contribution FROM exercise_muscles
+            WHERE exercise_id = ?
+        """, [ex["exercise_id"]]).fetchall()
+        program_exercises.append({
+            "sets_prescribed": ex["sets_prescribed"],
+            "muscles": [dict(m) for m in muscles],
+        })
+
+    projected = calculate_projected_volume(program_exercises)
+
+    # Get athlete landmarks (use defaults if not set)
+    athlete_id = db.execute(
+        "SELECT athlete_id FROM programs WHERE id = ?", [program_id]
+    ).fetchone()["athlete_id"]
+
+    from server.services.analytics_service import get_volume_landmarks
+    landmarks_list = get_volume_landmarks(db, athlete_id)
+    landmarks = {l["muscle_group"]: l for l in landmarks_list}
+
+    audit = audit_volume(projected, landmarks)
+
+    return {
+        "projected": {k: round(v, 1) for k, v in sorted(projected.items())},
+        "audit": audit,
+    }

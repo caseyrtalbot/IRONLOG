@@ -149,19 +149,27 @@ def get_analytics(db, athlete_id: int, days: int = 30, metric: str = "volume") -
     elif metric == "muscle_volume":
         rows = db.execute(
             """
-            SELECT e.primary_muscles, COUNT(sl.id) as total_sets,
-                   SUM(sl.weight * sl.reps) as total_volume
+            SELECT em.muscle_group,
+                   ROUND(SUM(em.contribution), 1) as effective_sets,
+                   ROUND(SUM(sl.weight * sl.reps * em.contribution)) as weighted_volume
             FROM set_logs sl
             JOIN workout_logs wl ON sl.workout_log_id = wl.id
-            JOIN exercises e ON sl.exercise_id = e.id
+            JOIN exercise_muscles em ON sl.exercise_id = em.exercise_id
             WHERE wl.athlete_id = ? AND wl.date >= date('now', ?)
             AND sl.set_type = 'working'
-            GROUP BY e.primary_muscles
-            ORDER BY total_sets DESC
+            GROUP BY em.muscle_group
+            ORDER BY effective_sets DESC
             """,
             [athlete_id, f"-{days} days"],
         ).fetchall()
-        return [dict(r) for r in rows]
+        return [
+            {
+                "muscle_group": r["muscle_group"],
+                "total_sets": r["effective_sets"],
+                "total_volume": r["weighted_volume"],
+            }
+            for r in rows
+        ]
 
     return []
 
@@ -172,32 +180,48 @@ def get_analytics(db, athlete_id: int, days: int = 30, metric: str = "volume") -
 
 _VOLUME_DEFAULTS = [
     ("chest", 8, 12, 18, 22),
-    ("back", 8, 12, 18, 22),
+    ("front_delts", 6, 8, 14, 20),
+    ("side_delts", 8, 14, 22, 28),
+    ("rear_delts", 6, 10, 18, 24),
+    ("lats", 8, 12, 18, 22),
+    ("upper_back", 6, 10, 16, 22),
     ("quads", 6, 10, 16, 20),
-    ("hamstrings", 6, 10, 14, 18),
+    ("hamstrings", 4, 8, 14, 18),
     ("glutes", 4, 8, 14, 18),
-    ("shoulders", 8, 12, 18, 22),
     ("biceps", 6, 10, 16, 20),
-    ("triceps", 6, 8, 14, 18),
+    ("triceps", 4, 8, 14, 18),
     ("calves", 8, 10, 16, 20),
-    ("core", 4, 8, 12, 16),
 ]
 
 
 def get_volume_landmarks(db, athlete_id: int) -> list[dict]:
-    """Return stored volume landmarks or sensible defaults."""
-    rows = db.execute(
-        "SELECT * FROM volume_landmarks WHERE athlete_id = ? ORDER BY muscle_group",
-        [athlete_id],
-    ).fetchall()
+    """Return volume landmarks: stored values merged with defaults for missing groups."""
+    stored = {
+        r["muscle_group"]: dict(r)
+        for r in db.execute(
+            "SELECT * FROM volume_landmarks WHERE athlete_id = ?", [athlete_id]
+        ).fetchall()
+    }
 
-    if not rows:
-        return [
-            {"muscle_group": d[0], "mev": d[1], "mav_low": d[2], "mav_high": d[3], "mrv": d[4]}
-            for d in _VOLUME_DEFAULTS
-        ]
+    result = []
+    default_groups = set()
+    for d in _VOLUME_DEFAULTS:
+        group = d[0]
+        default_groups.add(group)
+        if group in stored:
+            result.append(stored[group])
+        else:
+            result.append({
+                "muscle_group": group, "mev": d[1],
+                "mav_low": d[2], "mav_high": d[3], "mrv": d[4],
+            })
 
-    return [dict(r) for r in rows]
+    # Include any user-added groups not in defaults (e.g. core, erectors opt-in)
+    for group, data in stored.items():
+        if group not in default_groups:
+            result.append(data)
+
+    return result
 
 
 def save_volume_landmarks(db, body: VolumeLandmarksSave) -> dict:

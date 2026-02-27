@@ -5,6 +5,91 @@ import { getProgram } from '../api/programs.js';
 import { $id } from '../lib/dom.js';
 import { capitalize, formatGoal, formatPhase } from '../lib/format.js';
 
+// ── Volume Summary Renderer ─────────────────────────
+
+function renderVolumeSummary(volumeSummary) {
+    if (!volumeSummary || !volumeSummary.projected) return '';
+
+    const projected = volumeSummary.projected;
+    const audit = volumeSummary.audit || [];
+
+    // Build a lookup for quick issue checking per muscle
+    const issueMap = {};
+    for (const a of audit) {
+        issueMap[a.muscle] = a;
+    }
+
+    // Build table rows for each projected muscle group
+    const muscleRows = Object.keys(projected).sort().map(muscle => {
+        const vol = projected[muscle];
+        const issue = issueMap[muscle];
+
+        let colorClass = 'vol-green';
+        let statusLabel = 'OK';
+        if (issue) {
+            if (issue.severity === 'red') {
+                colorClass = 'vol-red';
+                statusLabel = issue.issue === 'below_mev' ? 'Below MEV' : 'Above MRV';
+            } else {
+                colorClass = 'vol-yellow';
+                statusLabel = issue.issue === 'below_mav' ? 'Below MAV' : 'Above MAV';
+            }
+        }
+
+        const muscleName = muscle.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+        return `
+        <tr class="${colorClass}">
+          <td style="padding:6px 10px;font-size:12px;font-weight:600">${muscleName}</td>
+          <td style="padding:6px 10px;font-size:12px;text-align:center;font-family:var(--font-mono)">${vol}</td>
+          <td style="padding:6px 10px;font-size:11px;text-align:right">${statusLabel}</td>
+        </tr>`;
+    }).join('');
+
+    // Build audit warnings
+    const warningsHtml = audit.length > 0
+        ? audit.map(a => {
+            const icon = a.severity === 'red' ? '!!' : '!';
+            const muscleName = a.muscle.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            const direction = a.issue.startsWith('below') ? 'needs' : 'exceeds';
+            const targetLabel = a.issue.replace('below_', '').replace('above_', '').toUpperCase();
+            return `
+            <div class="vol-warning vol-warning-${a.severity}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;margin-bottom:4px;border-radius:var(--radius-sm);font-size:12px">
+              <span style="font-weight:800;min-width:18px;text-align:center">${icon}</span>
+              <span><strong>${muscleName}</strong> ${direction} ${targetLabel} target &mdash; projected ${a.projected} sets, target ${a.target} (${a.delta} sets ${a.issue.startsWith('below') ? 'short' : 'over'})</span>
+            </div>`;
+        }).join('')
+        : '<div style="padding:8px 12px;font-size:12px;color:var(--green)">All muscle groups within optimal volume range.</div>';
+
+    return `
+    <div style="padding:0 16px 14px">
+      <div style="background:var(--bg-card);border:1px solid var(--border-dim);border-radius:var(--radius-md);overflow:hidden">
+        <div style="padding:12px 14px;border-bottom:1px solid var(--border-dim);display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:13px;font-weight:700;letter-spacing:0.03em;text-transform:uppercase;color:var(--gray-bright)">Volume Budget</div>
+          <span class="badge badge-gray" style="font-size:10px">sets/week</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border-dim)">
+              <th style="padding:6px 10px;font-size:10px;text-align:left;color:var(--gray-dim);text-transform:uppercase;letter-spacing:0.05em">Muscle</th>
+              <th style="padding:6px 10px;font-size:10px;text-align:center;color:var(--gray-dim);text-transform:uppercase;letter-spacing:0.05em">Sets</th>
+              <th style="padding:6px 10px;font-size:10px;text-align:right;color:var(--gray-dim);text-transform:uppercase;letter-spacing:0.05em">Status</th>
+            </tr>
+          </thead>
+          <tbody>${muscleRows}</tbody>
+        </table>
+        ${audit.length > 0 ? `
+        <div style="padding:10px 12px;border-top:1px solid var(--border-dim)">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-dim);margin-bottom:6px">Audit Warnings</div>
+          ${warningsHtml}
+        </div>` : `
+        <div style="padding:10px 12px;border-top:1px solid var(--border-dim)">
+          ${warningsHtml}
+        </div>`}
+      </div>
+    </div>`;
+}
+
 // ── Main Render ──────────────────────────────────────
 
 export async function selectProgram(programId) {
@@ -16,6 +101,7 @@ export async function selectProgram(programId) {
         const data = await getProgram(programId);
         const prog = data.program || data;
         const sessions = data.sessions || [];
+        const volumeSummary = data.volume_summary || prog.volume_summary || null;
 
         const sessionsHtml = sessions.map(sess => {
             const exercises = sess.exercises || [];
@@ -52,6 +138,8 @@ export async function selectProgram(programId) {
         </div>`;
         }).join('');
 
+        const volumeHtml = renderVolumeSummary(volumeSummary);
+
         vc.innerHTML = `
       <div class="view">
         <div style="padding:16px;border-bottom:1px solid var(--border-dim)">
@@ -72,6 +160,7 @@ export async function selectProgram(programId) {
           <span class="badge badge-gray">${formatGoal(prog.goal || data.goal)}</span>
           <span class="badge badge-gray">${sessions.length} sessions/week</span>
         </div>
+        ${volumeHtml}
         ${sessionsHtml || '<div class="empty-state"><h3>No sessions</h3></div>'}
       </div>`;
     } catch (e) {
