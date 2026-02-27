@@ -42,6 +42,18 @@ def get_phase_config(goal: str = "strength", phase: str = "accumulation", experi
     return analytics_service.get_phase_config(goal, phase, experience)
 
 
+@router.get("/analytics/muscle-status")
+def muscle_status(athlete_id: int = 1, days: int = 7, db=Depends(get_db)):
+    return analytics_service.get_muscle_status(db, athlete_id, days)
+
+
+@router.get("/analytics/compliance")
+def compliance(athlete_id: int = 1, program_id: int = 0, db=Depends(get_db)):
+    if not program_id:
+        return {"error": "program_id required"}
+    return analytics_service.get_session_compliance(db, athlete_id, program_id)
+
+
 # --- Parameterized route last ---
 
 

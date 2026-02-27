@@ -254,6 +254,159 @@ def get_phase_config(goal: str, phase: str, experience: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Muscle status
+# ---------------------------------------------------------------------------
+
+
+def get_muscle_status(db, athlete_id: int, days: int = 7) -> list[dict]:
+    """
+    Compare actual weekly effective sets per muscle against volume landmarks.
+    Returns each muscle with actual sets, MEV, MAV range, and MRV.
+    """
+    # Get actual volume from last N days
+    actual_rows = db.execute("""
+        SELECT em.muscle_group,
+               ROUND(SUM(em.contribution), 1) as actual_sets
+        FROM set_logs sl
+        JOIN workout_logs wl ON sl.workout_log_id = wl.id
+        JOIN exercise_muscles em ON sl.exercise_id = em.exercise_id
+        WHERE wl.athlete_id = ? AND wl.date >= date('now', ?)
+        AND sl.set_type = 'working'
+        GROUP BY em.muscle_group
+    """, [athlete_id, f"-{days} days"]).fetchall()
+    actual = {r["muscle_group"]: r["actual_sets"] for r in actual_rows}
+
+    # Get landmarks
+    landmarks = get_volume_landmarks(db, athlete_id)
+
+    result = []
+    for lm in landmarks:
+        muscle = lm["muscle_group"]
+        actual_sets = actual.get(muscle, 0)
+        mev = lm["mev"]
+        mav_low = lm["mav_low"]
+        mav_high = lm["mav_high"]
+        mrv = lm["mrv"]
+
+        if actual_sets < mev:
+            zone = "below_mev"
+        elif actual_sets < mav_low:
+            zone = "below_mav"
+        elif actual_sets <= mav_high:
+            zone = "optimal"
+        elif actual_sets <= mrv:
+            zone = "above_mav"
+        else:
+            zone = "above_mrv"
+
+        result.append({
+            "muscle_group": muscle,
+            "actual_sets": actual_sets,
+            "mev": mev,
+            "mav_low": mav_low,
+            "mav_high": mav_high,
+            "mrv": mrv,
+            "zone": zone,
+        })
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Session compliance
+# ---------------------------------------------------------------------------
+
+
+def get_session_compliance(db, athlete_id: int, program_id: int) -> dict:
+    """
+    Compare prescribed vs actual for each workout session in a program.
+    Returns per-exercise and per-session compliance percentages.
+    """
+    program = db.execute(
+        "SELECT * FROM programs WHERE id = ?", [program_id]
+    ).fetchone()
+    if not program:
+        return {"error": "Program not found"}
+
+    # Get all workout logs for this program
+    workout_logs = db.execute("""
+        SELECT wl.id, wl.session_id, wl.date
+        FROM workout_logs wl
+        WHERE wl.program_id = ? AND wl.athlete_id = ?
+        ORDER BY wl.date
+    """, [program_id, athlete_id]).fetchall()
+
+    sessions_compliance = []
+
+    for wl in workout_logs:
+        if not wl["session_id"]:
+            continue
+
+        # Get prescribed exercises for this session
+        prescribed = db.execute("""
+            SELECT pe.exercise_id, pe.sets_prescribed, pe.reps_prescribed,
+                   e.name as exercise_name,
+                   wp.target_weight, wp.sets_prescribed as week_sets
+            FROM program_exercises pe
+            JOIN exercises e ON pe.exercise_id = e.id
+            LEFT JOIN weekly_prescriptions wp
+                ON wp.program_exercise_id = pe.id
+                AND wp.week_number = ?
+            WHERE pe.session_id = ?
+        """, [program["current_week"], wl["session_id"]]).fetchall()
+
+        # Get actual logged sets
+        actual = db.execute("""
+            SELECT exercise_id, COUNT(*) as sets_done,
+                   AVG(weight) as avg_weight, AVG(reps) as avg_reps
+            FROM set_logs
+            WHERE workout_log_id = ? AND set_type = 'working'
+            GROUP BY exercise_id
+        """, [wl["id"]]).fetchall()
+        actual_map = {r["exercise_id"]: dict(r) for r in actual}
+
+        exercise_compliance = []
+        for pe in prescribed:
+            ex_id = pe["exercise_id"]
+            actual_data = actual_map.get(ex_id, {})
+            target_sets = pe["week_sets"] or pe["sets_prescribed"]
+            done_sets = actual_data.get("sets_done", 0)
+
+            sets_pct = min(1.0, done_sets / target_sets) if target_sets > 0 else 0
+
+            weight_pct = None
+            if pe["target_weight"] and actual_data.get("avg_weight"):
+                weight_pct = round(actual_data["avg_weight"] / pe["target_weight"], 2)
+
+            exercise_compliance.append({
+                "exercise_name": pe["exercise_name"],
+                "exercise_id": ex_id,
+                "sets_prescribed": target_sets,
+                "sets_completed": done_sets,
+                "sets_compliance": round(sets_pct, 2),
+                "target_weight": pe["target_weight"],
+                "avg_weight_used": actual_data.get("avg_weight"),
+                "weight_compliance": weight_pct,
+            })
+
+        overall = sum(e["sets_compliance"] for e in exercise_compliance) / max(1, len(exercise_compliance))
+
+        sessions_compliance.append({
+            "date": wl["date"],
+            "session_id": wl["session_id"],
+            "exercises": exercise_compliance,
+            "overall_compliance": round(overall, 2),
+        })
+
+    return {
+        "program_id": program_id,
+        "program_name": program["name"],
+        "sessions": sessions_compliance,
+        "total_sessions_logged": len(sessions_compliance),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
 
