@@ -1,5 +1,9 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from server.config import CORS_ORIGINS
 from server.db.connection import get_connection
@@ -26,6 +30,20 @@ def create_app():
     app.include_router(workouts.router, tags=["workouts"])
     app.include_router(analytics.router, tags=["analytics"])
     app.include_router(dashboard.router, tags=["dashboard"])
+
+    # Serve frontend static files
+    _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    @app.get("/")
+    def serve_index():
+        return FileResponse(os.path.join(_root, "index.html"))
+
+    app.mount("/js", StaticFiles(directory=os.path.join(_root, "js")), name="js")
+    app.mount("/static", StaticFiles(directory=_root), name="static")
+
+    @app.get("/style.css")
+    def serve_css():
+        return FileResponse(os.path.join(_root, "style.css"))
 
     @app.on_event("startup")
     def startup():
