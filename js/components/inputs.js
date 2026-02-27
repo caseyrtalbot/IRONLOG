@@ -2,13 +2,14 @@
 
 import { formatPattern } from '../lib/format.js';
 import { RPE_SCALE, SET_TYPES } from '../lib/calc.js';
+import { setTypePill } from './badges.js';
 
 /**
  * Build a single set row within an exercise block.
  * Inline onclick handlers (onSetInput, logSet) are set on `window` by the workout view.
  */
 export function buildSetRow(set, exIdx, sIdx) {
-    const typePill = `<span class="set-type-pill ${set.set_type}">${set.set_type === 'working' ? 'W' : set.set_type.charAt(0).toUpperCase()}</span>`;
+    const typePill = setTypePill(set.set_type);
     const doneClass = set.logged ? 'done' : '';
     const rowClass = set.logged ? 'logged' : '';
 
