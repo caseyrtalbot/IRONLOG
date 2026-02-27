@@ -9,6 +9,7 @@ import json
 
 from server.algorithms.phase_config import generate_phase_config
 from server.models.program import ProgramGenerate
+from server.algorithms.progression import calculate_weekly_progression, prescribe_weight
 
 
 # ---------------------------------------------------------------------------
@@ -100,6 +101,11 @@ def generate_program(db, body: ProgramGenerate) -> dict:
     elif body.split == "full_body":
         _generate_full_body(db, program_id, config, body.goal, body.days_per_week)
 
+    db.commit()
+
+    # Generate weekly prescriptions
+    e1rms = _get_athlete_e1rms(db, body.athlete_id)
+    _generate_weekly_prescriptions(db, program_id, config, body.weeks, e1rms)
     db.commit()
 
     # Volume audit
@@ -432,3 +438,72 @@ def _calculate_program_volume(db, program_id):
         "projected": {k: round(v, 1) for k, v in sorted(projected.items())},
         "audit": audit,
     }
+
+
+def _get_athlete_e1rms(db, athlete_id):
+    """Return dict mapping exercise_id -> latest e1RM."""
+    rows = db.execute("""
+        SELECT exercise_id, estimated_1rm
+        FROM one_rep_maxes
+        WHERE athlete_id = ?
+        AND id IN (
+            SELECT MAX(id) FROM one_rep_maxes
+            WHERE athlete_id = ?
+            GROUP BY exercise_id
+        )
+    """, [athlete_id, athlete_id]).fetchall()
+    return {r["exercise_id"]: r["estimated_1rm"] for r in rows}
+
+
+def _generate_weekly_prescriptions(db, program_id, config, weeks, e1rms):
+    """Generate per-week prescriptions for every exercise in the program."""
+    exercises = db.execute("""
+        SELECT pe.id as pe_id, pe.exercise_id, pe.sets_prescribed,
+               pe.reps_prescribed, pe.intensity_type, pe.intensity_value,
+               e.category
+        FROM program_exercises pe
+        JOIN program_sessions ps ON pe.session_id = ps.id
+        JOIN exercises e ON pe.exercise_id = e.id
+        WHERE ps.program_id = ?
+    """, [program_id]).fetchall()
+
+    for ex in exercises:
+        # Skip if already has prescriptions (idempotency for re-runs)
+        existing = db.execute(
+            "SELECT COUNT(*) FROM weekly_prescriptions WHERE program_exercise_id = ?",
+            [ex["pe_id"]]
+        ).fetchone()[0]
+        if existing > 0:
+            continue
+
+        is_compound = ex["category"] == "compound"
+        key_prefix = "compound" if is_compound else "isolation"
+
+        base_sets = ex["sets_prescribed"]
+        rpe_range = config.get(f"{key_prefix}_rpe", (7, 8))
+
+        progression = calculate_weekly_progression(
+            base_sets=base_sets,
+            weeks=weeks,
+            progression_type=config.get("volume_progression", "linear"),
+            intensity_start=config.get("intensity_start_pct", 70),
+            intensity_end=config.get("intensity_end_pct", 80),
+            rpe_start=rpe_range[0],
+            rpe_end=rpe_range[1],
+        )
+
+        e1rm = e1rms.get(ex["exercise_id"])
+
+        for wp in progression:
+            target_weight = prescribe_weight(e1rm, wp["intensity_pct"]) if e1rm else None
+
+            db.execute("""
+                INSERT INTO weekly_prescriptions
+                (program_exercise_id, week_number, sets_prescribed, reps_prescribed,
+                 intensity_pct, target_weight, target_rpe)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, [
+                ex["pe_id"], wp["week"], wp["sets"],
+                ex["reps_prescribed"], wp["intensity_pct"],
+                target_weight, wp["rpe"],
+            ])
