@@ -5,6 +5,86 @@ import { getProgram } from '../api/programs.js';
 import { $id } from '../lib/dom.js';
 import { capitalize, formatGoal, formatPhase } from '../lib/format.js';
 
+let detailWeek = 1;
+
+// ── Week Tabs ────────────────────────────────────────
+
+function renderWeekTabs(program, currentWeek) {
+    const weeks = program.mesocycle_weeks || 4;
+    return `
+    <div style="padding:0 16px 14px;display:flex;gap:6px;overflow-x:auto">
+      ${Array.from({length: weeks}, (_, i) => i + 1).map(w => `
+        <button class="pill ${w === currentWeek ? 'active' : ''}"
+          onclick="setDetailWeek(${w})"
+          style="min-width:60px">
+          Week ${w}${w === (program.current_week || 1) ? ' ●' : ''}
+        </button>
+      `).join('')}
+    </div>`;
+}
+
+// ── Exercise Row with Weekly Prescription ────────────
+
+function renderExerciseRow(pe, selectedWeek) {
+    const weekData = (pe.weekly || []).find(w => w.week_number === selectedWeek);
+    const sets = weekData?.sets_prescribed || pe.sets_prescribed;
+    const reps = weekData?.reps_prescribed || pe.reps_prescribed;
+    const weight = weekData?.target_weight;
+    const rpe = weekData?.target_rpe || pe.intensity_value;
+    const intensity = weekData?.intensity_pct;
+
+    const weightDisplay = weight
+        ? `<div class="mono text-amber" style="font-size:14px;font-weight:700">${weight} lbs</div>`
+        : '';
+    const intensityDisplay = intensity
+        ? `<div style="font-size:10px;color:var(--gray-dim)">${intensity}% 1RM</div>`
+        : '';
+
+    return `
+    <div class="program-exercise-row">
+      <div style="flex:1;min-width:0">
+        <div class="pe-row-name">${pe.superset_group ? `<span class="superset-label">${pe.superset_group}</span>` : ''}${pe.exercise_name || pe.name || '\u2014'}</div>
+        <div class="pe-row-prescription">${sets} \u00d7 ${reps} @ RPE ${rpe}</div>
+      </div>
+      <div style="text-align:right">
+        ${weightDisplay}
+        ${intensityDisplay}
+        <div style="font-size:10px;color:var(--gray-dim)">${pe.rest_seconds ? Math.round(pe.rest_seconds / 60) + 'min rest' : ''}</div>
+      </div>
+    </div>`;
+}
+
+// ── Next Phase Button ────────────────────────────────
+
+function renderNextPhaseButton(program) {
+    if (program.status !== 'completed' || !program.suggested_next_phase) return '';
+    const phase = program.suggested_next_phase;
+    const phaseLabel = phase.charAt(0).toUpperCase() + phase.slice(1);
+    return `
+    <div style="padding:16px;border-top:2px solid var(--amber)">
+      <button class="btn-primary btn-full" onclick="startNextPhase('${program.goal}','${phase}','${program.name}')">
+        Start Next Phase \u2192 ${phaseLabel}
+      </button>
+    </div>`;
+}
+
+// ── Global helpers for inline onclick ────────────────
+
+function setDetailWeek(w) {
+    detailWeek = w;
+    // Re-render the current program view
+    if (typeof window._currentProgramId !== 'undefined') {
+        selectProgram(window._currentProgramId);
+    }
+}
+window.setDetailWeek = setDetailWeek;
+
+function startNextPhase(goal, phase, prevName) {
+    // Navigate to wizard with pre-filled values
+    window.location.hash = '#program-wizard';
+}
+window.startNextPhase = startNextPhase;
+
 // ── Volume Summary Renderer ─────────────────────────
 
 function renderVolumeSummary(volumeSummary) {
@@ -94,6 +174,7 @@ function renderVolumeSummary(volumeSummary) {
 
 export async function selectProgram(programId) {
     state.selectedProgramId = programId;
+    window._currentProgramId = programId;
     const vc = $id('view-container');
     vc.innerHTML = `<div class="view"><div class="loading-center"><div class="spinner"></div><span>Loading program...</span></div></div>`;
 
@@ -105,20 +186,7 @@ export async function selectProgram(programId) {
 
         const sessionsHtml = sessions.map(sess => {
             const exercises = sess.exercises || [];
-            const exHtml = exercises.map(pe => {
-                const ssHtml = pe.superset_group ? `<span class="superset-label" style="margin-right:6px">${pe.superset_group}</span>` : '';
-                return `
-          <div class="program-exercise-row">
-            <div style="flex:1;min-width:0">
-              <div class="pe-row-name">${ssHtml}${pe.exercise_name || pe.name || '\u2014'}</div>
-              <div class="pe-row-prescription">${pe.sets_prescribed} \u00d7 ${pe.reps_prescribed} reps</div>
-            </div>
-            <div style="text-align:right">
-              <div class="pe-row-intensity">${pe.intensity_type?.toUpperCase()}: ${pe.intensity_value}</div>
-              <div style="font-size:10px;color:var(--gray-dim)">${pe.rest_seconds ? Math.round(pe.rest_seconds / 60) + 'min rest' : ''}</div>
-            </div>
-          </div>`;
-            }).join('');
+            const exHtml = exercises.map(pe => renderExerciseRow(pe, detailWeek)).join('');
 
             return `
         <div class="session-day-card">
@@ -139,6 +207,8 @@ export async function selectProgram(programId) {
         }).join('');
 
         const volumeHtml = renderVolumeSummary(volumeSummary);
+        const weekTabsHtml = renderWeekTabs(prog, detailWeek);
+        const nextPhaseHtml = renderNextPhaseButton(prog);
 
         vc.innerHTML = `
       <div class="view">
@@ -160,7 +230,9 @@ export async function selectProgram(programId) {
           <span class="badge badge-gray">${formatGoal(prog.goal || data.goal)}</span>
           <span class="badge badge-gray">${sessions.length} sessions/week</span>
         </div>
+        ${weekTabsHtml}
         ${volumeHtml}
+        ${nextPhaseHtml}
         ${sessionsHtml || '<div class="empty-state"><h3>No sessions</h3></div>'}
       </div>`;
     } catch (e) {
