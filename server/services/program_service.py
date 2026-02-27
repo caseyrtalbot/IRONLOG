@@ -57,7 +57,21 @@ def get_program_detail(db, program_id: int) -> dict | None:
             """,
             [sess["id"]],
         ).fetchall()
-        s["exercises"] = [dict(ex) for ex in exercises]
+        ex_list = []
+        for ex in exercises:
+            ex_dict = dict(ex)
+            # Attach weekly prescriptions
+            weeks = db.execute("""
+                SELECT week_number, sets_prescribed, reps_prescribed,
+                       intensity_pct, target_weight, target_rpe
+                FROM weekly_prescriptions
+                WHERE program_exercise_id = ?
+                ORDER BY week_number
+            """, [ex["id"]]).fetchall()
+            ex_dict["weekly"] = [dict(w) for w in weeks]
+            ex_list.append(ex_dict)
+
+        s["exercises"] = ex_list
         result["sessions"].append(s)
 
     # Include volume audit summary
