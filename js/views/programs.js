@@ -1,9 +1,10 @@
 // js/views/programs.js — Programs list view
 
 import { state } from '../state/store.js';
-import { getPrograms } from '../api/programs.js';
+import { getPrograms, deleteProgram } from '../api/programs.js';
 import { $id } from '../lib/dom.js';
 import { capitalize, formatGoal, formatPhase } from '../lib/format.js';
+import { showToast } from '../components/toast.js';
 
 // ── Main Render ──────────────────────────────────────
 
@@ -41,11 +42,14 @@ export async function renderPrograms() {
         list.innerHTML = programs.map(p => `
       <div class="program-card ${p.status === 'active' ? 'active-prog' : ''}" onclick="selectProgram(${p.id})">
         <div class="program-card-top">
-          <div>
+          <div style="flex:1;min-width:0">
             <div class="program-card-name">${p.name}</div>
             <div class="program-card-meta">${formatGoal(p.goal)} \u00b7 ${formatPhase(p.phase)} \u00b7 ${p.mesocycle_weeks} wks</div>
           </div>
           <span class="prog-status ${p.status}">${capitalize(p.status)}</span>
+          <button class="btn-icon" style="margin-left:4px;color:var(--gray-dim)" onclick="event.stopPropagation();confirmDeleteProgram(${p.id},'${p.name.replace(/'/g, "\\'")}')" title="Delete program">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+          </button>
         </div>
         ${p.status === 'active' ? `
           <div class="prog-progress-bar" style="margin-top:10px">
@@ -58,3 +62,16 @@ export async function renderPrograms() {
         $id('programs-list').innerHTML = `<div class="empty-state"><h3>Error loading programs</h3><button class="btn-primary" onclick="navigate('programs')">Retry</button></div>`;
     }
 }
+
+async function confirmDeleteProgram(id, name) {
+    if (!confirm(`Delete "${name}"? This will remove all sessions, prescriptions, and associated data.`)) return;
+    try {
+        await deleteProgram(id);
+        showToast(`"${name}" deleted`, 'success');
+        renderPrograms();
+    } catch (e) {
+        showToast('Error deleting program', 'error');
+    }
+}
+
+window.confirmDeleteProgram = confirmDeleteProgram;

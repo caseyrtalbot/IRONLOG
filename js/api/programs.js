@@ -1,8 +1,12 @@
-import { get, post } from './client.js';
+import { get, post, del } from './client.js';
 import { ATHLETE_ID } from '../config.js';
 
 export function getPrograms() {
     return get('programs', { athlete_id: ATHLETE_ID });
+}
+
+export function deleteProgram(id) {
+    return del(`programs/${id}`);
 }
 
 export function getProgram(id) {

@@ -25,6 +25,14 @@ def get_program(id: int, db=Depends(get_db)):
     return result
 
 
+@router.delete("/programs/{id}")
+def delete_program(id: int, db=Depends(get_db)):
+    result = program_service.delete_program(db, id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Program not found")
+    return result
+
+
 @router.get("/programs/{program_id}/sessions/{session_id}/prescriptions")
 def get_session_prescriptions(program_id: int, session_id: int, db=Depends(get_db)):
     return program_service.get_current_week_prescriptions(db, program_id, session_id)

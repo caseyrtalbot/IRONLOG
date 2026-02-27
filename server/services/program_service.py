@@ -89,6 +89,17 @@ def get_program_detail(db, program_id: int) -> dict | None:
     return result
 
 
+def delete_program(db, program_id: int) -> dict | None:
+    """Delete a program and all cascading child records. Returns status or None."""
+    program = db.execute("SELECT id, name FROM programs WHERE id = ?", [program_id]).fetchone()
+    if not program:
+        return None
+    # Cascade handles sessions, exercises, prescriptions
+    db.execute("DELETE FROM programs WHERE id = ?", [program_id])
+    db.commit()
+    return {"status": "deleted", "name": program["name"]}
+
+
 def generate_program(db, body: ProgramGenerate) -> dict:
     """
     Generate a periodized program.
