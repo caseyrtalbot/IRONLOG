@@ -7,6 +7,7 @@ export const activeWorkout = {
     timerInterval: null,
     sessionId: null,
     programId: null,
+    sessionName: '',
     exercises: [],        // [{exercise, sets:[{...}], overloadRec, e1rm}]
     sessionRpe: 7,
     notes: '',
@@ -28,6 +29,7 @@ export function resetWorkout() {
         timerInterval: null,
         sessionId: null,
         programId: null,
+        sessionName: '',
         exercises: [],
         sessionRpe: 7,
         notes: '',

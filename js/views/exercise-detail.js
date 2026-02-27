@@ -2,11 +2,11 @@
 
 import { state } from '../state/store.js';
 import { activeWorkout } from '../state/workout-state.js';
-import { getE1rm, getOverloadRec, getVolumeLandmarks } from '../api/analytics.js';
+import { getE1rm, getOverloadRec } from '../api/analytics.js';
 import { $id } from '../lib/dom.js';
 import { fmtDate, capitalize, formatPattern, dotsHtml } from '../lib/format.js';
 import { destroyChart, createChart } from '../components/charts.js';
-import { renderExercises } from './exercises.js';
+
 
 // ── Main Render ──────────────────────────────────────
 
@@ -85,8 +85,6 @@ export async function viewExerciseDetail(exId) {
     try {
         const e1rmData = await getE1rm(exId, 90);
         const history = e1rmData.history || [];
-        const vlm = (await getVolumeLandmarks().catch(() => ({ landmarks: [] }))).landmarks || [];
-
         // Volume landmark display
         const vlmEl = $id('vlm-detail');
         if (vlmEl) {
