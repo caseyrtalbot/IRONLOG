@@ -2,7 +2,7 @@
 
 import { state } from '../state/store.js';
 import { activeWorkout } from '../state/workout-state.js';
-import { getPrograms, getProgram } from '../api/programs.js';
+import { getPrograms, getProgram, getSessionPrescriptions } from '../api/programs.js';
 import { getAthlete } from '../api/athlete.js';
 import { getExercises } from '../api/exercises.js';
 import { getOverloadRec } from '../api/analytics.js';
@@ -114,15 +114,27 @@ async function startProgramSession(programId, sessionId) {
             bodyWeight: state.athlete?.body_weight || null,
         });
 
+        // Fetch weekly prescriptions for pre-filling weights
+        const prescriptions = await getSessionPrescriptions(programId, sessionId).catch(() => []);
+        const prescriptionMap = {};
+        for (const p of (Array.isArray(prescriptions) ? prescriptions : prescriptions.prescriptions || [])) {
+            prescriptionMap[p.exercise_id] = p;
+        }
+
         // Build exercises array from program
         for (const pe of (session.exercises || [])) {
+            const rx = prescriptionMap[pe.exercise_id];
             const sets = [];
-            for (let i = 1; i <= pe.sets_prescribed; i++) {
+            const numSets = (rx && rx.week_sets) || pe.sets_prescribed;
+            for (let i = 1; i <= numSets; i++) {
                 sets.push({
                     set_number: i,
                     set_type: i === 1 ? 'warmup' : 'working',
-                    weight: '', reps: pe.reps_prescribed || '', rpe: pe.intensity_value || '',
+                    weight: (rx && rx.target_weight) || '',
+                    reps: pe.reps_prescribed || '',
+                    rpe: (rx && rx.target_rpe) || pe.intensity_value || '',
                     rir: '', logged: false,
+                    prescribed_weight: (rx && rx.target_weight) || null,
                     prescribed_reps: pe.reps_prescribed,
                     prescribed_intensity: pe.intensity_value,
                     intensity_type: pe.intensity_type,

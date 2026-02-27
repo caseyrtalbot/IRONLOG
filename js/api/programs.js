@@ -12,3 +12,7 @@ export function getProgram(id) {
 export function generateProgram(data) {
     return post('programs/generate', data);
 }
+
+export function getSessionPrescriptions(programId, sessionId) {
+    return get(`programs/${programId}/sessions/${sessionId}/prescriptions`);
+}
