@@ -321,6 +321,9 @@ def get_session_compliance(db, athlete_id: int, program_id: int) -> dict:
     """
     Compare prescribed vs actual for each workout session in a program.
     Returns per-exercise and per-session compliance percentages.
+
+    Week is determined per-workout from its chronological position:
+    week_number = (workout_index // sessions_per_week) + 1
     """
     program = db.execute(
         "SELECT * FROM programs WHERE id = ?", [program_id]
@@ -328,21 +331,30 @@ def get_session_compliance(db, athlete_id: int, program_id: int) -> dict:
     if not program:
         return {"error": "Program not found"}
 
-    # Get all workout logs for this program
+    sessions_per_week = db.execute(
+        "SELECT COUNT(*) FROM program_sessions WHERE program_id = ?", [program_id]
+    ).fetchone()[0]
+    if sessions_per_week == 0:
+        return {"error": "No sessions in program"}
+
+    # Get all workout logs for this program, ordered chronologically
     workout_logs = db.execute("""
         SELECT wl.id, wl.session_id, wl.date
         FROM workout_logs wl
         WHERE wl.program_id = ? AND wl.athlete_id = ?
-        ORDER BY wl.date
+        ORDER BY wl.date, wl.created_at
     """, [program_id, athlete_id]).fetchall()
 
     sessions_compliance = []
 
-    for wl in workout_logs:
+    for idx, wl in enumerate(workout_logs):
         if not wl["session_id"]:
             continue
 
-        # Get prescribed exercises for this session
+        # Derive which week this workout belongs to from its position
+        workout_week = (idx // sessions_per_week) + 1
+
+        # Get prescribed exercises, joined to the correct week's prescriptions
         prescribed = db.execute("""
             SELECT pe.exercise_id, pe.sets_prescribed, pe.reps_prescribed,
                    e.name as exercise_name,
@@ -353,7 +365,7 @@ def get_session_compliance(db, athlete_id: int, program_id: int) -> dict:
                 ON wp.program_exercise_id = pe.id
                 AND wp.week_number = ?
             WHERE pe.session_id = ?
-        """, [program["current_week"], wl["session_id"]]).fetchall()
+        """, [workout_week, wl["session_id"]]).fetchall()
 
         # Get actual logged sets
         actual = db.execute("""
@@ -393,6 +405,7 @@ def get_session_compliance(db, athlete_id: int, program_id: int) -> dict:
 
         sessions_compliance.append({
             "date": wl["date"],
+            "week": workout_week,
             "session_id": wl["session_id"],
             "exercises": exercise_compliance,
             "overall_compliance": round(overall, 2),

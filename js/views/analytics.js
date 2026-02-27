@@ -9,6 +9,16 @@ import { showToast } from '../components/toast.js';
 import { destroyChart } from '../components/charts.js';
 import { ATHLETE_ID } from '../config.js';
 
+const CHART_SCALES_X_Y = {
+    x: { grid: { color: '#1a1a1a' }, ticks: { color: '#555', font: { family: 'JetBrains Mono', size: 10 } } },
+    y: { grid: { display: false }, ticks: { color: '#8A8A8A', font: { size: 11 } } }
+};
+
+const CHART_SCALES_VERTICAL = {
+    x: { grid: { display: false }, ticks: { color: '#555', font: { family: 'JetBrains Mono', size: 9 }, maxRotation: 45 } },
+    y: { grid: { color: '#1a1a1a' }, ticks: { color: '#555', font: { family: 'JetBrains Mono', size: 10 } } }
+};
+
 // ── Main Render ──────────────────────────────────────
 
 export async function renderAnalytics() {
@@ -185,10 +195,7 @@ function renderVolumeChart(volumePoints, workouts) {
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: {
-                x: { grid: { display: false }, ticks: { color: '#555', font: { family: 'JetBrains Mono', size: 9 }, maxRotation: 45 } },
-                y: { grid: { color: '#1a1a1a' }, ticks: { color: '#555', font: { family: 'JetBrains Mono', size: 10 } } }
-            }
+            scales: CHART_SCALES_VERTICAL
         }
     });
 }
@@ -227,10 +234,7 @@ function renderMuscleStatusChart(statusData) {
         options: {
             indexAxis: 'y', responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
-            scales: {
-                x: { grid: { color: '#1a1a1a' }, ticks: { color: '#555', font: { family: 'JetBrains Mono', size: 10 } } },
-                y: { grid: { display: false }, ticks: { color: '#8A8A8A', font: { size: 11 } } }
-            }
+            scales: CHART_SCALES_X_Y
         }
     });
 }
@@ -256,10 +260,7 @@ function renderE1rmChart(e1rmData) {
         options: {
             indexAxis: 'y', responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: {
-                x: { grid: { color: '#1a1a1a' }, ticks: { color: '#555', font: { family: 'JetBrains Mono', size: 10 } } },
-                y: { grid: { display: false }, ticks: { color: '#8A8A8A', font: { size: 11 } } }
-            }
+            scales: CHART_SCALES_X_Y
         }
     });
 }
@@ -279,10 +280,7 @@ function renderMuscleChart(musclePoints) {
         options: {
             indexAxis: 'y', responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: {
-                x: { grid: { color: '#1a1a1a' }, ticks: { color: '#555', font: { family: 'JetBrains Mono', size: 10 } } },
-                y: { grid: { display: false }, ticks: { color: '#8A8A8A', font: { size: 11 } } }
-            }
+            scales: CHART_SCALES_X_Y
         }
     });
 }
@@ -302,10 +300,7 @@ function renderFreqChart(freqPoints) {
         options: {
             indexAxis: 'y', responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: {
-                x: { grid: { color: '#1a1a1a' }, ticks: { color: '#555', font: { family: 'JetBrains Mono', size: 10 } } },
-                y: { grid: { display: false }, ticks: { color: '#8A8A8A', font: { size: 11 } } }
-            }
+            scales: CHART_SCALES_X_Y
         }
     });
 }

@@ -6,10 +6,15 @@ Delegates phase-config computation to server.algorithms.phase_config.
 """
 
 import json
+import logging
 
 from server.algorithms.phase_config import generate_phase_config
-from server.models.program import ProgramGenerate
 from server.algorithms.progression import calculate_weekly_progression, prescribe_weight
+from server.algorithms.volume_budget import calculate_projected_volume, audit_volume
+from server.models.program import ProgramGenerate
+from server.services.analytics_service import get_volume_landmarks
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -78,6 +83,7 @@ def get_program_detail(db, program_id: int) -> dict | None:
     try:
         result["volume_summary"] = _calculate_program_volume(db, program_id)
     except Exception:
+        logger.exception("Failed to calculate volume summary for program %s", program_id)
         result["volume_summary"] = None
 
     return result
@@ -129,6 +135,7 @@ def generate_program(db, body: ProgramGenerate) -> dict:
         _generate_weekly_prescriptions(db, program_id, config, body.weeks, e1rms)
         db.commit()
     except Exception:
+        logger.exception("Volume adjustment failed for program %s", program_id)
         volume_summary = _calculate_program_volume(db, program_id)
 
     return {"id": program_id, "name": program_name, "status": "generated",
@@ -555,8 +562,6 @@ def _add_exercise_by_pattern(
 
 def _calculate_program_volume(db, program_id):
     """Calculate projected weekly volume for a generated program."""
-    from server.algorithms.volume_budget import calculate_projected_volume, audit_volume
-
     exercises = db.execute("""
         SELECT pe.sets_prescribed, pe.exercise_id
         FROM program_exercises pe
@@ -582,7 +587,6 @@ def _calculate_program_volume(db, program_id):
         "SELECT athlete_id FROM programs WHERE id = ?", [program_id]
     ).fetchone()["athlete_id"]
 
-    from server.services.analytics_service import get_volume_landmarks
     landmarks_list = get_volume_landmarks(db, athlete_id)
     landmarks = {l["muscle_group"]: l for l in landmarks_list}
 

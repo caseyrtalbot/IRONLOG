@@ -5,8 +5,6 @@ Weekly progression curves and weight prescription.
 Pure functions — no database, no HTTP, no side effects.
 """
 
-import math
-
 
 def calculate_weekly_progression(
     base_sets, weeks, progression_type,
@@ -47,6 +45,9 @@ def calculate_weekly_progression(
     return result
 
 
+_UNDULATING_OFFSETS = [0, 1, 0, 1]  # Wave: base, up, base, up
+
+
 def _volume_for_week(base, week, total_weeks, progression_type):
     """Calculate sets for a given week based on progression curve."""
     t = (week - 1) / max(1, total_weeks - 1)  # 0.0 to 1.0
@@ -57,7 +58,7 @@ def _volume_for_week(base, week, total_weeks, progression_type):
 
     elif progression_type == "undulating":
         # Wave: up, down, up, higher
-        offsets = [0, 1, 0, 1]
+        offsets = _UNDULATING_OFFSETS
         if total_weeks <= len(offsets):
             idx = week - 1
             return base + offsets[idx] if idx < len(offsets) else base
