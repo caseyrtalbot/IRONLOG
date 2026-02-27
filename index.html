@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>IRONLOG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header id="app-header">
+    <div class="header-left">
+      <div class="logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <rect x="1" y="10" width="4" height="4" rx="1" fill="#F5A623"/>
+          <rect x="5" y="8" width="2" height="8" rx="1" fill="#F5A623"/>
+          <rect x="7" y="5" width="10" height="14" rx="1" fill="none" stroke="#F5A623" stroke-width="1.5"/>
+          <rect x="17" y="8" width="2" height="8" rx="1" fill="#F5A623"/>
+          <rect x="19" y="10" width="4" height="4" rx="1" fill="#F5A623"/>
+          <line x1="12" y1="8" x2="12" y2="16" stroke="#F5A623" stroke-width="1.5"/>
+          <line x1="9" y1="12" x2="15" y2="12" stroke="#F5A623" stroke-width="1.5"/>
+        </svg>
+        <span class="logo-text">IRONLOG</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div id="workout-timer-display" class="workout-timer hidden">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="13" r="8" stroke="#F5A623" stroke-width="2"/><path d="M12 9v4l2 2" stroke="#F5A623" stroke-width="2" stroke-linecap="round"/><path d="M9 3h6" stroke="#F5A623" stroke-width="2" stroke-linecap="round"/></svg>
+        <span id="workout-timer-text">0:00</span>
+      </div>
+      <div id="streak-badge" class="streak-badge hidden">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="#F5A623"><path d="M13.5 0.67C13.5 0.67 14.24 3.32 14.24 5.47C14.24 7.53 12.89 9.2 10.83 9.2C8.76 9.2 7.2 7.53 7.2 5.47L7.23 5.13C5.21 7.5 4 10.61 4 14C4 18.42 7.58 22 12 22C16.42 22 20 18.42 20 14C20 9.28 17.36 5.19 13.5 0.67Z"/></svg>
+        <span id="streak-count">0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main id="app-main">
+    <!-- Views injected here by JS -->
+    <div id="view-container"></div>
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav id="bottom-nav">
+    <a href="#dashboard" class="nav-item" data-route="dashboard">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <span>Home</span>
+    </a>
+    <a href="#workout" class="nav-item" data-route="workout">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <rect x="1" y="11" width="4" height="3" rx="0.5" stroke="currentColor" stroke-width="1.8"/>
+        <rect x="5" y="8.5" width="2" height="7" rx="0.5" stroke="currentColor" stroke-width="1.8"/>
+        <rect x="7" y="6" width="10" height="12" rx="1" stroke="currentColor" stroke-width="1.8"/>
+        <rect x="17" y="8.5" width="2" height="7" rx="0.5" stroke="currentColor" stroke-width="1.8"/>
+        <rect x="19" y="11" width="4" height="3" rx="0.5" stroke="currentColor" stroke-width="1.8"/>
+        <line x1="12" y1="9" x2="12" y2="15" stroke="currentColor" stroke-width="1.5"/>
+        <line x1="9.5" y1="12" x2="14.5" y2="12" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+      <span>Workout</span>
+    </a>
+    <a href="#exercises" class="nav-item" data-route="exercises">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 6h16M4 10h16M4 14h10M4 18h7"/>
+      </svg>
+      <span>Exercises</span>
+    </a>
+    <a href="#programs" class="nav-item" data-route="programs">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+        <rect x="7" y="14" width="3" height="3" rx="0.5" fill="currentColor"/>
+      </svg>
+      <span>Programs</span>
+    </a>
+    <a href="#analytics" class="nav-item" data-route="analytics">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/>
+        <line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      <span>Analytics</span>
+    </a>
+  </nav>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- Rest Timer Overlay -->
+  <div id="rest-timer-overlay" class="hidden">
+    <div class="rest-timer-card">
+      <div class="rest-timer-label">REST TIMER</div>
+      <div id="rest-timer-ring">
+        <svg viewBox="0 0 100 100" width="140" height="140">
+          <circle cx="50" cy="50" r="44" fill="none" stroke="#1a1a1a" stroke-width="8"/>
+          <circle id="rest-ring-progress" cx="50" cy="50" r="44" fill="none" stroke="#F5A623" stroke-width="8"
+                  stroke-dasharray="276.46" stroke-dashoffset="0" stroke-linecap="round"
+                  transform="rotate(-90 50 50)"/>
+        </svg>
+        <div class="rest-timer-time" id="rest-timer-display">2:00</div>
+      </div>
+      <div class="rest-timer-controls">
+        <button class="rest-btn-adjust" onclick="APP.adjustRestTimer(-15)">-15s</button>
+        <button class="rest-btn-skip" onclick="APP.skipRestTimer()">SKIP</button>
+        <button class="rest-btn-adjust" onclick="APP.adjustRestTimer(15)">+15s</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Onboarding Modal -->
+  <div id="onboarding-modal" class="modal-overlay hidden">
+    <div class="modal-card onboarding-card">
+      <div class="onboarding-logo">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+          <rect x="1" y="10" width="4" height="4" rx="1" fill="#F5A623"/>
+          <rect x="5" y="8" width="2" height="8" rx="1" fill="#F5A623"/>
+          <rect x="7" y="5" width="10" height="14" rx="1" fill="none" stroke="#F5A623" stroke-width="1.5"/>
+          <rect x="17" y="8" width="2" height="8" rx="1" fill="#F5A623"/>
+          <rect x="19" y="10" width="4" height="4" rx="1" fill="#F5A623"/>
+          <line x1="12" y1="8" x2="12" y2="16" stroke="#F5A623" stroke-width="1.5"/>
+          <line x1="9" y1="12" x2="15" y2="12" stroke="#F5A623" stroke-width="1.5"/>
+        </svg>
+        <h1>IRONLOG</h1>
+        <p class="onboarding-sub">Elite strength training intelligence</p>
+      </div>
+      <div class="onboarding-form">
+        <div class="form-group">
+          <label>Your Name</label>
+          <input type="text" id="ob-name" placeholder="Athlete name" autocomplete="off">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Age</label>
+            <input type="number" id="ob-age" inputmode="decimal" placeholder="25" min="13" max="90">
+          </div>
+          <div class="form-group">
+            <label>Body Weight (lbs)</label>
+            <input type="number" id="ob-weight" inputmode="decimal" placeholder="185">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Experience Level</label>
+          <div class="pill-selector" id="ob-experience">
+            <button class="pill" data-value="beginner">Beginner</button>
+            <button class="pill active" data-value="intermediate">Intermediate</button>
+            <button class="pill" data-value="advanced">Advanced</button>
+            <button class="pill" data-value="elite">Elite</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Primary Goal</label>
+          <div class="pill-selector" id="ob-goal">
+            <button class="pill active" data-value="strength">Strength</button>
+            <button class="pill" data-value="hypertrophy">Hypertrophy</button>
+            <button class="pill" data-value="power">Power</button>
+            <button class="pill" data-value="endurance">Endurance</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Training Days/Week</label>
+            <input type="number" id="ob-days" inputmode="decimal" placeholder="4" min="1" max="7">
+          </div>
+          <div class="form-group">
+            <label>Session Length (min)</label>
+            <input type="number" id="ob-duration" inputmode="decimal" placeholder="75">
+          </div>
+        </div>
+        <button class="btn-primary btn-full" id="ob-submit">START TRAINING →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="page-loader" class="page-loader">
+    <div class="loader-content">
+      <div class="loader-logo">IRONLOG</div>
+      <div class="loader-bar"><div class="loader-fill"></div></div>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
