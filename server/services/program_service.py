@@ -108,11 +108,14 @@ def generate_program(db, body: ProgramGenerate) -> dict:
     _generate_weekly_prescriptions(db, program_id, config, body.weeks, e1rms)
     db.commit()
 
-    # Volume audit
+    # Volume-constrained adjustment
     try:
-        volume_summary = _calculate_program_volume(db, program_id)
+        volume_summary = _adjust_for_volume(db, program_id, body.athlete_id, config)
+        # Re-generate weekly prescriptions for any newly added exercises
+        _generate_weekly_prescriptions(db, program_id, config, body.weeks, e1rms)
+        db.commit()
     except Exception:
-        volume_summary = None
+        volume_summary = _calculate_program_volume(db, program_id)
 
     return {"id": program_id, "name": program_name, "status": "generated",
             "volume_summary": volume_summary}
@@ -507,3 +510,91 @@ def _generate_weekly_prescriptions(db, program_id, config, weeks, e1rms):
                 ex["reps_prescribed"], wp["intensity_pct"],
                 target_weight, wp["rpe"],
             ])
+
+
+# 12 primary muscles the generator should audit and fix
+_PRIMARY_MUSCLES = {
+    "chest", "front_delts", "side_delts", "rear_delts", "lats", "upper_back",
+    "quads", "hamstrings", "glutes", "biceps", "triceps", "calves",
+}
+
+# Mapping: muscle -> best isolation movement pattern to add
+_MUSCLE_FIX_PATTERNS = {
+    "chest": ("horizontal_push", "isolation"),
+    "front_delts": ("vertical_push", "isolation"),
+    "side_delts": ("lateral_raise", "isolation"),
+    "rear_delts": ("horizontal_pull", "isolation"),
+    "lats": ("vertical_pull", "compound"),
+    "upper_back": ("horizontal_pull", "compound"),
+    "quads": ("knee_extension", "isolation"),
+    "hamstrings": ("knee_flexion", "isolation"),
+    "glutes": ("hip_extension", "compound"),
+    "biceps": ("elbow_flexion", "isolation"),
+    "triceps": ("elbow_extension", "isolation"),
+    "calves": ("ankle_plantar_flexion", "isolation"),
+}
+
+
+def _adjust_for_volume(db, program_id, athlete_id, config, max_passes=3):
+    """
+    Iteratively add exercises to fix volume deficits.
+
+    1. Calculate projected volume
+    2. Audit against landmarks (primary muscles only)
+    3. For each below_mev: add an isolation exercise to the least-loaded session
+    4. Re-audit. Repeat up to max_passes.
+
+    Returns final volume_summary.
+    """
+    for _pass in range(max_passes):
+        volume_summary = _calculate_program_volume(db, program_id)
+        audit = volume_summary.get("audit", [])
+
+        # Filter to below_mev on primary muscles only
+        deficits = [
+            a for a in audit
+            if a["issue"] == "below_mev" and a["muscle"] in _PRIMARY_MUSCLES
+        ]
+        if not deficits:
+            return volume_summary  # All good
+
+        # Find least-loaded session (fewest exercises)
+        sessions = db.execute("""
+            SELECT ps.id, ps.name, COUNT(pe.id) as ex_count
+            FROM program_sessions ps
+            LEFT JOIN program_exercises pe ON pe.session_id = ps.id
+            WHERE ps.program_id = ?
+            GROUP BY ps.id
+            ORDER BY ex_count ASC
+        """, [program_id]).fetchall()
+
+        if not sessions:
+            return volume_summary
+
+        for deficit in deficits[:2]:  # Fix at most 2 deficits per pass
+            muscle = deficit["muscle"]
+            fix = _MUSCLE_FIX_PATTERNS.get(muscle)
+            if not fix:
+                continue
+
+            pattern, category = fix
+            target_session = sessions[0]  # least loaded
+
+            # Get current max exercise order in that session
+            max_order = db.execute("""
+                SELECT COALESCE(MAX(exercise_order), 0) FROM program_exercises
+                WHERE session_id = ?
+            """, [target_session["id"]]).fetchone()[0]
+
+            i_sets = config.get("isolation_sets", (2, 3))
+            i_reps = config.get("isolation_reps", (8, 12))
+
+            _add_exercise_by_pattern(
+                db, target_session["id"], pattern, category, None,
+                i_sets[0], f"{i_reps[0]}-{i_reps[1]}", "rir", "2",
+                config.get("rest_isolation", 60), max_order + 1, None,
+            )
+
+        db.commit()
+
+    return _calculate_program_volume(db, program_id)
