@@ -23,3 +23,8 @@ def get_program(id: int, db=Depends(get_db)):
     if result is None:
         raise HTTPException(status_code=404, detail="Program not found")
     return result
+
+
+@router.get("/programs/{program_id}/sessions/{session_id}/prescriptions")
+def get_session_prescriptions(program_id: int, session_id: int, db=Depends(get_db)):
+    return program_service.get_current_week_prescriptions(db, program_id, session_id)

@@ -121,6 +121,36 @@ def generate_program(db, body: ProgramGenerate) -> dict:
             "volume_summary": volume_summary}
 
 
+def get_current_week_prescriptions(db, program_id, session_id):
+    """
+    Get prescriptions for the current week of a program session.
+    Returns exercises with per-week targets (sets, reps, weight, RPE).
+    """
+    program = db.execute(
+        "SELECT current_week FROM programs WHERE id = ?", [program_id]
+    ).fetchone()
+    if not program:
+        return []
+
+    week = program["current_week"]
+
+    rows = db.execute("""
+        SELECT pe.*, e.name as exercise_name, e.movement_pattern, e.category,
+               e.equipment,
+               wp.sets_prescribed as week_sets,
+               wp.reps_prescribed as week_reps,
+               wp.intensity_pct, wp.target_weight, wp.target_rpe
+        FROM program_exercises pe
+        JOIN exercises e ON pe.exercise_id = e.id
+        LEFT JOIN weekly_prescriptions wp
+            ON wp.program_exercise_id = pe.id AND wp.week_number = ?
+        WHERE pe.session_id = ?
+        ORDER BY pe.exercise_order
+    """, [week, session_id]).fetchall()
+
+    return [dict(r) for r in rows]
+
+
 # ---------------------------------------------------------------------------
 # Private helpers — session generation
 # ---------------------------------------------------------------------------

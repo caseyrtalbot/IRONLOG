@@ -58,6 +58,11 @@ def save_workout(db, body: WorkoutSave) -> dict:
                 )
 
     db.commit()
+
+    # Auto-advance program week if applicable
+    if body.program_id:
+        _check_week_advancement(db, body.program_id)
+
     return {"id": workout_id, "status": "saved", "sets_logged": len(body.sets)}
 
 
@@ -129,3 +134,48 @@ def delete_workout(db, workout_id: int) -> dict | None:
     db.execute("DELETE FROM workout_logs WHERE id = ?", [workout_id])
     db.commit()
     return {"status": "deleted"}
+
+
+_PHASE_SEQUENCE = {
+    "accumulation": "intensification",
+    "intensification": "realization",
+    "realization": "deload",
+    "deload": "accumulation",
+}
+
+
+def _check_week_advancement(db, program_id):
+    """Auto-advance current_week based on completed sessions. Mark complete if done."""
+    program = db.execute(
+        "SELECT * FROM programs WHERE id = ?", [program_id]
+    ).fetchone()
+    if not program or program["status"] != "active":
+        return
+
+    sessions_per_week = db.execute(
+        "SELECT COUNT(*) FROM program_sessions WHERE program_id = ?", [program_id]
+    ).fetchone()[0]
+    if sessions_per_week == 0:
+        return
+
+    total_logged = db.execute(
+        "SELECT COUNT(*) FROM workout_logs WHERE program_id = ?", [program_id]
+    ).fetchone()[0]
+
+    expected_week = (total_logged // sessions_per_week) + 1
+
+    if expected_week > program["mesocycle_weeks"]:
+        # Program complete
+        next_phase = _PHASE_SEQUENCE.get(program["phase"])
+        db.execute("""
+            UPDATE programs SET status = 'completed',
+            current_week = ?, suggested_next_phase = ?
+            WHERE id = ?
+        """, [program["mesocycle_weeks"], next_phase, program_id])
+        db.commit()
+    elif expected_week > program["current_week"]:
+        db.execute(
+            "UPDATE programs SET current_week = ? WHERE id = ?",
+            [expected_week, program_id]
+        )
+        db.commit()
