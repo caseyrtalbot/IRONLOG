@@ -89,9 +89,6 @@ async function loadAnalyticsData() {
 
         const heatHtml = calDays.map(d => `<div class="heat-day ${d.worked ? 'worked' : ''}" title="${d.date}"></div>`).join('');
 
-        // e1RM top exercises
-        const topE1rms = e1rms.slice(0, 6);
-
         container.innerHTML = `
       <!-- Volume Chart -->
       <div class="chart-card">
@@ -129,17 +126,10 @@ async function loadAnalyticsData() {
 
       <!-- e1RM Trends -->
       <div class="chart-card">
-        <div class="chart-card-title">Estimated 1RM \u2014 Current</div>
-        ${topE1rms.length ? topE1rms.map(e => `
-          <div class="flex-between" style="padding:8px 0;border-bottom:1px solid var(--border-dim)">
-            <div>
-              <div style="font-weight:600;font-size:13px">${e.exercise_name}</div>
-              <div style="font-size:10px;color:var(--gray-dim);font-family:var(--font-mono)">${fmtDate(e.date)}</div>
-            </div>
-            <div class="mono text-amber" style="font-size:18px;font-weight:700">${e.estimated_1rm?.toFixed(0)} lbs</div>
-          </div>`).join('') :
-            `<div class="text-dim text-sm" style="padding:12px 0">Log workouts to track e1RM</div>`
-        }
+        <div class="chart-card-title">Estimated 1RM \u2014 Top Lifts</div>
+        <div class="chart-wrap" style="height:220px">
+          <canvas id="e1rm-trend-chart"></canvas>
+        </div>
       </div>
 
       <!-- Movement Pattern Frequency -->
@@ -164,6 +154,7 @@ async function loadAnalyticsData() {
         renderVolumeChart(volumePoints, workouts);
         renderMuscleStatusChart(Array.isArray(muscleStatusData) ? muscleStatusData : (muscleStatusData?.data || []));
         renderMuscleChart(musclePoints);
+        renderE1rmChart(e1rms);
         renderFreqChart(freqPoints);
         loadVolumeEditor();
 
@@ -236,6 +227,35 @@ function renderMuscleStatusChart(statusData) {
         options: {
             indexAxis: 'y', responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+            scales: {
+                x: { grid: { color: '#1a1a1a' }, ticks: { color: '#555', font: { family: 'JetBrains Mono', size: 10 } } },
+                y: { grid: { display: false }, ticks: { color: '#8A8A8A', font: { size: 11 } } }
+            }
+        }
+    });
+}
+
+function renderE1rmChart(e1rmData) {
+    const ctx = document.getElementById('e1rm-trend-chart');
+    if (!ctx || !e1rmData.length) return;
+    destroyChart('e1rmTrend');
+
+    state.charts.e1rmTrend = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: e1rmData.slice(0, 8).map(e => e.exercise_name || e.name),
+            datasets: [{
+                label: 'e1RM (lbs)',
+                data: e1rmData.slice(0, 8).map(e => e.estimated_1rm ?? e.e1rm),
+                backgroundColor: 'rgba(245,166,35,0.6)',
+                borderColor: '#F5A623',
+                borderWidth: 1,
+                borderRadius: 3,
+            }]
+        },
+        options: {
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
             scales: {
                 x: { grid: { color: '#1a1a1a' }, ticks: { color: '#555', font: { family: 'JetBrains Mono', size: 10 } } },
                 y: { grid: { display: false }, ticks: { color: '#8A8A8A', font: { size: 11 } } }
