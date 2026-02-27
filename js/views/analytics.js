@@ -1,7 +1,7 @@
 // js/views/analytics.js — Analytics view with charts
 
 import { state } from '../state/store.js';
-import { getAnalytics, getAllE1rms, getVolumeLandmarks, saveVolumeLandmarks as apiSaveVolumeLandmarks } from '../api/analytics.js';
+import { getAnalytics, getAllE1rms, getVolumeLandmarks, saveVolumeLandmarks as apiSaveVolumeLandmarks, getMuscleStatus } from '../api/analytics.js';
 import { getWorkouts } from '../api/workouts.js';
 import { $id } from '../lib/dom.js';
 import { fmtDate, formatPattern } from '../lib/format.js';
@@ -49,12 +49,13 @@ async function loadAnalyticsData() {
     const days = state.analyticsRange === 'all' ? 365 : state.analyticsRange;
 
     try {
-        const [volumeData, freqData, muscleData, workoutsData, e1rmData] = await Promise.all([
+        const [volumeData, freqData, muscleData, workoutsData, e1rmData, muscleStatusData] = await Promise.all([
             getAnalytics(days, 'volume').catch(() => null),
             getAnalytics(days, 'frequency').catch(() => null),
             getAnalytics(days, 'muscle_volume').catch(() => null),
             getWorkouts(50).catch(() => []),
             getAllE1rms().catch(() => []),
+            getMuscleStatus(days).catch(() => []),
         ]);
 
         const workouts = Array.isArray(workoutsData) ? workoutsData : (workoutsData.workouts || []);
@@ -110,6 +111,14 @@ async function loadAnalyticsData() {
         </div>
       </div>
 
+      <!-- Muscle Volume vs Landmarks -->
+      <div class="chart-card">
+        <div class="chart-card-title">Muscle Volume vs Landmarks (${days}d)</div>
+        <div class="chart-wrap" style="height:300px">
+          <canvas id="muscle-status-chart"></canvas>
+        </div>
+      </div>
+
       <!-- Muscle Volume -->
       <div class="chart-card">
         <div class="chart-card-title">Muscle Group Volume</div>
@@ -153,6 +162,7 @@ async function loadAnalyticsData() {
 
         // Render charts
         renderVolumeChart(volumePoints, workouts);
+        renderMuscleStatusChart(Array.isArray(muscleStatusData) ? muscleStatusData : (muscleStatusData?.data || []));
         renderMuscleChart(musclePoints);
         renderFreqChart(freqPoints);
         loadVolumeEditor();
@@ -187,6 +197,48 @@ function renderVolumeChart(volumePoints, workouts) {
             scales: {
                 x: { grid: { display: false }, ticks: { color: '#555', font: { family: 'JetBrains Mono', size: 9 }, maxRotation: 45 } },
                 y: { grid: { color: '#1a1a1a' }, ticks: { color: '#555', font: { family: 'JetBrains Mono', size: 10 } } }
+            }
+        }
+    });
+}
+
+function renderMuscleStatusChart(statusData) {
+    const ctx = document.getElementById('muscle-status-chart');
+    if (!ctx || !statusData.length) return;
+    destroyChart('muscleStatus');
+
+    const labels = statusData.map(s => formatPattern(s.muscle_group));
+    const actual = statusData.map(s => s.actual_sets);
+    const mev = statusData.map(s => s.mev);
+    const mavHigh = statusData.map(s => s.mav_high);
+    const mrv = statusData.map(s => s.mrv);
+
+    // Color bars based on zone
+    const colors = statusData.map(s => {
+        if (s.zone === 'below_mev') return 'rgba(239,68,68,0.7)';
+        if (s.zone === 'below_mav') return 'rgba(245,166,35,0.6)';
+        if (s.zone === 'optimal') return 'rgba(34,197,94,0.7)';
+        if (s.zone === 'above_mav') return 'rgba(245,166,35,0.6)';
+        return 'rgba(239,68,68,0.7)';
+    });
+
+    state.charts.muscleStatus = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                { label: 'Actual Sets', data: actual, backgroundColor: colors, borderRadius: 3 },
+                { label: 'MEV', data: mev, type: 'line', borderColor: 'rgba(239,68,68,0.5)', borderDash: [4,4], pointRadius: 0, fill: false },
+                { label: 'MAV Range', data: mavHigh, type: 'line', borderColor: 'rgba(34,197,94,0.3)', backgroundColor: 'rgba(34,197,94,0.05)', pointRadius: 0, fill: '-1' },
+                { label: 'MRV', data: mrv, type: 'line', borderColor: 'rgba(239,68,68,0.3)', borderDash: [4,4], pointRadius: 0, fill: false },
+            ]
+        },
+        options: {
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+            scales: {
+                x: { grid: { color: '#1a1a1a' }, ticks: { color: '#555', font: { family: 'JetBrains Mono', size: 10 } } },
+                y: { grid: { display: false }, ticks: { color: '#8A8A8A', font: { size: 11 } } }
             }
         }
     });
