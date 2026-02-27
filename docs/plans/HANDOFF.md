@@ -1,28 +1,35 @@
 # IRONLOG v2 Implementation Handoff
 
-## Status: 18 of 21 tasks complete (Phases 1-3 COMPLETE)
+## Status: 21 of 21 tasks complete (Phases 1-4 COMPLETE) — Phase 5-6 planned
 
 ## Branch
 
-- **All work merged to `main`** at `a9f4abf` (31 commits)
+- **All work on `main`** at `cd68c00` (34 commits)
 - **Pushed to `origin/main`**
 - No active worktrees or feature branches
 
 ## Execution Method
 
 Using **Subagent-Driven Development** (`superpowers:subagent-driven-development`):
-- Fresh subagent per task
+- Fresh subagent per task (or parallel agents for independent tasks)
 - Two-stage review after each: spec compliance, then code quality
-- Sequential task execution (no parallel implementers)
+- Tasks 20+21 were executed in parallel
 
 ## Plan Files
 
 - **Design doc:** `docs/plans/2026-02-26-ironlog-v2-design.md`
-- **Implementation plan:** `docs/plans/2026-02-26-ironlog-v2-implementation.md`
+- **Phases 1-3 implementation plan:** `docs/plans/2026-02-26-ironlog-v2-implementation.md`
+- **Phase 4 plan:** `docs/plans/PHASE4_PLAN.md`
+- **Phase 5-6 plan:** `docs/plans/2026-02-27-phase5-6-plan.md`
+- **Muscle assignments reference:** `docs/MUSCLE_ASSIGNMENTS_NOTE.md`
 
 ## Commit History
 
 ```
+cd68c00 feat: serve frontend static files from FastAPI
+6022662 chore: move Phase 4 plan to docs/plans/
+b616fdf feat: Phase 4 — exercise-muscle foundation & volume intelligence
+c639180 docs: update handoff for Phase 4 — Phases 1-3 complete
 a9f4abf chore: remove legacy CGI backend and old monolithic app.js
 4763d0c fix: add missing e1rm field normalization in analytics view
 70c5ce6 feat: wire frontend to FastAPI backend — fix response shape mismatches
@@ -88,15 +95,42 @@ a4a57cf feat: config, db connection, and FastAPI dependency injection
 | 17 | Wire frontend to FastAPI backend (12 response shape fixes) | `70c5ce6` + `4763d0c` |
 | 18 | Clean up old CGI backend + monolith (3764 lines removed) | `a9f4abf` |
 
-### Phase 4: Enhance — NOT STARTED (0/3)
+### Phase 4: Exercise-Muscle Foundation & Volume Intelligence — COMPLETE (3/3)
 
-> **Note:** These tasks are deliberately left as stubs in the plan. They require fresh design work, not mechanical extraction. When we reach this phase, we will design from first principles.
+| # | Task | Commit |
+|---|------|--------|
+| 19 | Exercise-muscle seed data (16 muscles, 50 templates, 150+ overrides) | `b616fdf` |
+| 20 | Per-muscle volume analytics (contribution-weighted queries) | `b616fdf` |
+| 21 | Volume budget + audit in generator + frontend display | `b616fdf` |
 
-| # | Task | Status | Notes |
-|---|------|--------|-------|
-| 19 | Author `exercise_muscles` seed data | Pending | Domain work: accurate primary/secondary muscle assignments with contribution weights (0.0-1.0) for all 292 exercises. Requires exercise science knowledge. |
-| 20 | Per-muscle volume analytics | Blocked by 19 | Upgrade `analytics_service.py` and `algorithms/volume.py` to query via `exercise_muscles` relation with contribution factors instead of comma-separated strings. |
-| 21 | Enhanced generator with volume budgeting | Blocked by 19, 20 | Add MEV/MRV-aware volume budgeting to the program generator. Design logic fresh based on volume landmarks table and `exercise_muscles` data. |
+Phase 4 also added:
+- Static file serving from FastAPI (`cd68c00`)
+- Legacy muscle group migration (back→lats+upper_back, shoulders→front/side/rear_delts)
+- Volume landmarks editor with 12 canonical muscle groups
+- Volume budget table with color-coded audit warnings
+
+### Phase 5: Smart Prescriptions — PLANNED (0/8)
+
+| # | Task | Status |
+|---|------|--------|
+| 22 | Schema: `weekly_prescriptions` table + `suggested_next_phase` column | Pending |
+| 23 | Algorithm: `progression.py` — weekly intensity ramp + volume wave curves | Pending |
+| 24 | Service: Weekly prescription generation with e1RM-based weights | Blocked by 22, 23 |
+| 25 | Service: Volume-constrained generator (generate-adjust loop, 3-pass cap) | Blocked by 24 |
+| 26 | Service: Week advancement + program completion + next phase suggestion | Blocked by 22 |
+| 27 | API: Enhanced program detail with weekly prescriptions | Blocked by 24 |
+| 28 | Frontend: Program detail weekly view with prescribed weights | Blocked by 27 |
+| 29 | Frontend: Workout view pre-fills weights from current week prescriptions | Blocked by 26, 27 |
+
+### Phase 6: Performance Feedback — PLANNED (0/5)
+
+| # | Task | Status |
+|---|------|--------|
+| 30 | Backend: Muscle status + session compliance analytics endpoints | Blocked by Phase 5 |
+| 31 | Backend: Program retrospective endpoint | Blocked by Phase 5 |
+| 32 | Frontend: Volume vs landmarks zone chart + compliance view | Blocked by 30 |
+| 33 | Frontend: e1RM progression bar chart | Pending |
+| 34 | Frontend: Program retrospective view | Blocked by 31 |
 
 ## Architecture Summary
 
@@ -104,26 +138,27 @@ a4a57cf feat: config, db connection, and FastAPI dependency injection
 
 ```
 server/
-├── main.py              — FastAPI app factory + startup
+├── main.py              — FastAPI app factory + startup + static serving
 ├── config.py            — DB_PATH, CORS_ORIGINS from env
 ├── dependencies.py      — get_db() generator for DI
 ├── algorithms/          — Pure functions (no DB, no HTTP)
 │   ├── e1rm.py          — Epley formula, RPE chart, volume load
 │   ├── overload.py      — Progressive overload recommendations
-│   ├── phase_config.py  — Periodization config generator
+│   ├── phase_config.py  — 4×4 periodization matrix (goal × phase)
 │   ├── streak.py        — Consecutive training day counter
-│   └── volume.py        — Muscle volume aggregation (placeholder)
+│   └── volume_budget.py — Projected volume + MEV/MRV audit
 ├── db/
 │   ├── connection.py    — SQLite connection with WAL + FK
-│   ├── schema.py        — 11 tables + indexes
-│   └── seed_exercises.py — 292 exercise taxonomy entries
+│   ├── schema.py        — 11 tables + 7 indexes
+│   ├── seed_exercises.py — 292 exercise taxonomy entries
+│   └── seed_muscles.py  — Exercise-muscle contributions (16 groups, 50 templates, 150+ overrides)
 ├── models/              — Pydantic v2 request models
 ├── services/            — Business logic + SQL (no HTTP)
 │   ├── athlete_service.py
 │   ├── exercise_service.py
-│   ├── program_service.py
+│   ├── program_service.py  — Generator + volume budget + weekly prescriptions
 │   ├── workout_service.py
-│   ├── analytics_service.py
+│   ├── analytics_service.py — e1RM, overload, volume, landmarks
 │   └── dashboard_service.py
 └── routes/              — Thin FastAPI routers (21 endpoints)
 ```
@@ -132,67 +167,83 @@ server/
 
 ```
 js/
-├── app.js               — Entry point (127 lines): route registration, init, onboarding
+├── app.js               — Entry point: route registration, init, onboarding
 ├── config.js            — API_BASE, ATHLETE_ID
-├── api/                 — HTTP client + domain API modules
-│   ├── client.js        — get(), post(), del() with cleanParams
-│   ├── athlete.js       — getAthlete, saveAthlete
-│   ├── exercises.js     — getExercises, searchExercises, getMovementPatterns, getMuscleGroups
-│   ├── programs.js      — getPrograms, getProgram, generateProgram
-│   ├── workouts.js      — saveWorkout, getWorkouts, getWorkoutDetail, deleteWorkout
-│   ├── analytics.js     — getE1rm, getAllE1rms, getOverloadRec, getAnalytics, etc.
-│   └── dashboard.js     — getDashboard
-├── state/               — Shared mutable state + routing
-│   ├── store.js         — Global state object (14 properties)
-│   ├── router.js        — Hash router with registerRoute/navigate/initRouter
-│   └── workout-state.js — activeWorkout, restTimer + reset helpers
-├── lib/                 — Pure utilities (no DOM mutation except dom.js)
-│   ├── calc.js          — RPE_SCALE, SET_TYPES, GOAL_INFO, PHASE_INFO, calcE1rm
-│   ├── format.js        — 10 formatting functions (fmtDate, dotsHtml, etc.)
-│   └── dom.js           — $id() shorthand
-├── components/          — Reusable UI components
-│   ├── toast.js         — showToast
-│   ├── modal.js         — createModal, closeModal
-│   ├── timer.js         — Workout timer + rest timer controls
-│   ├── loader.js        — loaderHtml
-│   ├── badges.js        — statusBadge, phaseBadge, setTypePill
-│   ├── charts.js        — Chart.js lifecycle (create/destroy)
-│   ├── pills.js         — pillSelectorHtml, bindPillSelector
-│   └── inputs.js        — buildSetRow, buildExerciseBlock
-└── views/               — Page renderers (set window globals for onclick)
-    ├── dashboard.js     — renderDashboard, updateStreakBadge, viewWorkout
-    ├── workout.js       — renderWorkout + 15 workout functions (487 lines)
-    ├── exercises.js     — renderExercises, search, filters
-    ├── exercise-detail.js — viewExerciseDetail with e1RM chart + overload rec
-    ├── programs.js      — renderPrograms
-    ├── program-detail.js — selectProgram
-    ├── program-wizard.js — showProgramGenerator (multi-step wizard)
-    ├── analytics.js     — renderAnalytics + 3 chart renderers + volume editor
-    └── profile.js       — renderProfile, saveProfile, saveProfileLandmarks
+├── api/                 — HTTP client + 7 domain modules
+├── state/               — store.js, router.js, workout-state.js
+├── lib/                 — calc.js, format.js, dom.js
+├── components/          — 8 reusable UI components
+└── views/               — 9 page renderers
+    ├── analytics.js     — Volume charts, heat calendar, e1RM, landmarks editor
+    ├── program-detail.js — Volume budget table + audit warnings
+    ├── program-wizard.js — 5-step generator wizard
+    └── workout.js       — Set logging with overload recommendations
 ```
 
-**Dependency direction:** `views → components → lib → (nothing)`, `views → api → (nothing)`, `views → state → (nothing)`
+### Database (11 tables)
 
-## Key Integration Notes
+Core: `athletes`, `exercises`, `programs`, `program_sessions`, `program_exercises`, `workout_logs`, `set_logs`, `one_rep_maxes`, `volume_landmarks`
 
-- **12 response shape normalizations** were added in Phase 3 to bridge FastAPI backend field names to frontend expectations. All normalizations live in the frontend views using defensive fallback chains (`||`, `??`, `Array.isArray()`).
-- **CORS:** Permissive (`*`) for dev. Should be tightened for production.
-- **Config:** `js/config.js` reads `window.IRONLOG_API` or defaults to `http://localhost:8000`.
-- **Running locally:** `./run.sh` starts FastAPI on port 8000. Serve frontend with `python3 -m http.server 3000` from project root.
+Phase 4: `exercise_muscles` (contribution-weighted exercise-to-muscle mapping), `program_phases` (exists but not yet populated)
 
-## Known Deviations from Plan
+Phase 5 will add: `weekly_prescriptions` (per-week per-exercise targets)
 
-1. **pydantic version:** `>=2.9.0` instead of `==2.9.0` (Python 3.14 compatibility)
-2. **View function names:** Plan spec'd `renderDashboardView` etc., actual exports are `renderDashboard` etc.
-3. **Route registration:** Plan spec'd 9 routes, actual is 6 (exercise-detail, program-detail, program-wizard are imperative sub-views, not hash routes)
-4. **Old app.js deletion:** Plan said Task 16, actually done in Task 18 cleanup
-5. **Review-driven fixes:** Multiple code quality improvements beyond plan scope (clearInterval leaks, URLSearchParams undefined bug, casing mismatches, unused imports)
+### Key Systems
 
-## Resume Instructions for Phase 4
+**Exercise-Muscle Contributions** (Phase 4):
+- 16 canonical muscle groups with 0.25-1.0 contribution factors
+- Two-layer: pattern templates → exercise-specific overrides (full replace)
+- `SUM(em.contribution)` = effective sets per muscle per week
+- 12 primary muscles audited by generator; 4 stabilizers tracked only
 
-1. Create a worktree: `git worktree add .worktrees/v4-enhance -b feature/v4-enhance`
-2. Task 19 (exercise_muscles seed data) is the unblocking task — design this first
-3. The `exercise_muscles` table already exists in `server/db/schema.py` — it needs seed data
-4. Tasks 20 and 21 depend on Task 19's data being available
-5. These tasks need fresh design, not mechanical extraction. Use `superpowers:brainstorming` before implementation.
-6. Continue the pattern: implement → spec review → quality review → mark complete → next task
+**Volume Budget** (Phase 4):
+- `calculate_projected_volume()` + `audit_volume()` pure functions
+- Red: below MEV / above MRV. Yellow: below MAV / above MAV
+- Generator runs audit post-generation and includes in response
+
+**Phase Config** (Phase 1):
+- 4×4 matrix: {strength, hypertrophy, power, endurance} × {accumulation, intensification, realization, deload}
+- Each cell: compound/isolation sets, reps, RPE, rest, volume_progression, intensity_start/end_pct
+
+## Key Design Decisions for Phase 5-6
+
+| Decision | Choice |
+|----------|--------|
+| Weight prescriptions | e1RM × (intensity_pct / 100), rounded to 2.5 lbs. Falls back to RPE-only. |
+| Periodization | Hybrid — single phase per program, suggest next phase on completion |
+| Week progression | Intensity ramps linearly; volume follows curve (linear/undulating/step/taper/reduced) |
+| Prescription storage | New `weekly_prescriptions` table — clean separation from template |
+| Volume adjustment | Generate → audit → add isolation to fix below_mev → re-audit (max 3 passes) |
+| Compliance | Per-exercise: match logged sets to prescribed by exercise_id + session_id |
+| Analytics | Volume vs landmarks chart, session compliance, e1RM progression, program retrospective |
+
+## Running Locally
+
+```bash
+cd /Users/caseytalbot/Desktop/IRONLOG
+./run.sh   # Starts FastAPI on port 8000 (serves frontend + API)
+```
+
+Open `http://localhost:8000` — frontend served via FastAPI static file mount.
+
+## Tests
+
+```bash
+python -m pytest tests/ -v
+```
+
+Current: 29 tests passing
+- `test_e1rm.py` (7 tests)
+- `test_overload.py` (3 tests)
+- `test_streak.py` (4 tests)
+- `test_seed_muscles.py` (11 tests)
+- `test_volume_budget.py` (4 tests)
+
+## Resume Instructions for Phase 5
+
+1. Read the plan: `docs/plans/2026-02-27-phase5-6-plan.md`
+2. Start with Task 22 (schema) — it unblocks everything else
+3. Tasks 22-23 are independent and can run in parallel
+4. Task 24 depends on both 22 and 23
+5. Continue the pattern: implement → test → commit → next task
+6. Use `superpowers:executing-plans` for implementation
