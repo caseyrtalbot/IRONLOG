@@ -1,19 +1,17 @@
 # IRONLOG v2 Implementation Handoff
 
-## Status: 21 of 21 tasks complete (Phases 1-4 COMPLETE) — Phase 5-6 planned
+## Status: 34 of 34 tasks complete (Phases 1-6 COMPLETE)
 
 ## Branch
 
-- **All work on `main`** at `cd68c00` (34 commits)
-- **Pushed to `origin/main`**
+- **All work on `main`** at `2f45a04` (47 commits)
 - No active worktrees or feature branches
 
 ## Execution Method
 
 Using **Subagent-Driven Development** (`superpowers:subagent-driven-development`):
 - Fresh subagent per task (or parallel agents for independent tasks)
-- Two-stage review after each: spec compliance, then code quality
-- Tasks 20+21 were executed in parallel
+- Phases 5-6: Tasks 22+23, 28+29, 30+31, 32+33+34 were executed in parallel batches
 
 ## Plan Files
 
@@ -26,6 +24,20 @@ Using **Subagent-Driven Development** (`superpowers:subagent-driven-development`
 ## Commit History
 
 ```
+2f45a04 feat: e1RM progression bar chart in analytics view
+6375a39 feat: program retrospective view with e1RM changes and volume totals
+f33c607 feat: muscle status zone chart and compliance API client
+603e8e2 feat: program retrospective endpoint with e1RM changes and volume totals
+cd6c1d7 feat: muscle status and session compliance analytics endpoints
+20c122a feat: program detail with weekly prescription view and next phase button
+0aab4d2 feat: workout view pre-fills prescribed weights from weekly prescriptions
+82ca1e2 feat: include weekly prescriptions in program detail response
+3a432da feat: week advancement, program completion, and weekly prescriptions endpoint
+b529543 feat: volume-constrained generator with iterative adjustment
+befeb1f feat: weekly prescription generation with e1RM-based weights
+2c24260 feat: progression algorithm — weekly curves + weight prescription
+074eb79 feat: weekly_prescriptions table + suggested_next_phase column
+034dd26 docs: Phase 5-6 plan — smart prescriptions & performance feedback
 cd68c00 feat: serve frontend static files from FastAPI
 6022662 chore: move Phase 4 plan to docs/plans/
 b616fdf feat: Phase 4 — exercise-muscle foundation & volume intelligence
@@ -103,34 +115,28 @@ a4a57cf feat: config, db connection, and FastAPI dependency injection
 | 20 | Per-muscle volume analytics (contribution-weighted queries) | `b616fdf` |
 | 21 | Volume budget + audit in generator + frontend display | `b616fdf` |
 
-Phase 4 also added:
-- Static file serving from FastAPI (`cd68c00`)
-- Legacy muscle group migration (back→lats+upper_back, shoulders→front/side/rear_delts)
-- Volume landmarks editor with 12 canonical muscle groups
-- Volume budget table with color-coded audit warnings
+### Phase 5: Smart Prescriptions — COMPLETE (8/8)
 
-### Phase 5: Smart Prescriptions — PLANNED (0/8)
-
-| # | Task | Status |
+| # | Task | Commit |
 |---|------|--------|
-| 22 | Schema: `weekly_prescriptions` table + `suggested_next_phase` column | Pending |
-| 23 | Algorithm: `progression.py` — weekly intensity ramp + volume wave curves | Pending |
-| 24 | Service: Weekly prescription generation with e1RM-based weights | Blocked by 22, 23 |
-| 25 | Service: Volume-constrained generator (generate-adjust loop, 3-pass cap) | Blocked by 24 |
-| 26 | Service: Week advancement + program completion + next phase suggestion | Blocked by 22 |
-| 27 | API: Enhanced program detail with weekly prescriptions | Blocked by 24 |
-| 28 | Frontend: Program detail weekly view with prescribed weights | Blocked by 27 |
-| 29 | Frontend: Workout view pre-fills weights from current week prescriptions | Blocked by 26, 27 |
+| 22 | Schema: `weekly_prescriptions` table + `suggested_next_phase` column | `074eb79` |
+| 23 | Algorithm: `progression.py` — weekly intensity ramp + volume wave curves | `2c24260` |
+| 24 | Service: Weekly prescription generation with e1RM-based weights | `befeb1f` |
+| 25 | Service: Volume-constrained generator (generate-adjust loop, 3-pass cap) | `b529543` |
+| 26 | Service: Week advancement + program completion + next phase suggestion | `3a432da` |
+| 27 | API: Enhanced program detail with weekly prescriptions | `82ca1e2` |
+| 28 | Frontend: Program detail weekly view with prescribed weights | `20c122a` |
+| 29 | Frontend: Workout view pre-fills weights from current week prescriptions | `0aab4d2` |
 
-### Phase 6: Performance Feedback — PLANNED (0/5)
+### Phase 6: Performance Feedback — COMPLETE (5/5)
 
-| # | Task | Status |
+| # | Task | Commit |
 |---|------|--------|
-| 30 | Backend: Muscle status + session compliance analytics endpoints | Blocked by Phase 5 |
-| 31 | Backend: Program retrospective endpoint | Blocked by Phase 5 |
-| 32 | Frontend: Volume vs landmarks zone chart + compliance view | Blocked by 30 |
-| 33 | Frontend: e1RM progression bar chart | Pending |
-| 34 | Frontend: Program retrospective view | Blocked by 31 |
+| 30 | Backend: Muscle status + session compliance analytics endpoints | `cd6c1d7` |
+| 31 | Backend: Program retrospective endpoint | `603e8e2` |
+| 32 | Frontend: Volume vs landmarks zone chart + compliance API client | `f33c607` |
+| 33 | Frontend: e1RM progression bar chart | `2f45a04` |
+| 34 | Frontend: Program retrospective view | `6375a39` |
 
 ## Architecture Summary
 
@@ -145,22 +151,23 @@ server/
 │   ├── e1rm.py          — Epley formula, RPE chart, volume load
 │   ├── overload.py      — Progressive overload recommendations
 │   ├── phase_config.py  — 4×4 periodization matrix (goal × phase)
+│   ├── progression.py   — Weekly progression curves + weight prescription
 │   ├── streak.py        — Consecutive training day counter
 │   └── volume_budget.py — Projected volume + MEV/MRV audit
 ├── db/
 │   ├── connection.py    — SQLite connection with WAL + FK
-│   ├── schema.py        — 11 tables + 7 indexes
+│   ├── schema.py        — 12 tables + 8 indexes (incl. weekly_prescriptions)
 │   ├── seed_exercises.py — 292 exercise taxonomy entries
 │   └── seed_muscles.py  — Exercise-muscle contributions (16 groups, 50 templates, 150+ overrides)
 ├── models/              — Pydantic v2 request models
 ├── services/            — Business logic + SQL (no HTTP)
 │   ├── athlete_service.py
 │   ├── exercise_service.py
-│   ├── program_service.py  — Generator + volume budget + weekly prescriptions
-│   ├── workout_service.py
-│   ├── analytics_service.py — e1RM, overload, volume, landmarks
+│   ├── program_service.py  — Generator + volume budget + weekly prescriptions + retrospective
+│   ├── workout_service.py  — Workout logging + auto week advancement
+│   ├── analytics_service.py — e1RM, overload, volume, landmarks, muscle status, compliance
 │   └── dashboard_service.py
-└── routes/              — Thin FastAPI routers (21 endpoints)
+└── routes/              — Thin FastAPI routers (25 endpoints)
 ```
 
 ### Frontend (`js/`)
@@ -174,21 +181,45 @@ js/
 ├── lib/                 — calc.js, format.js, dom.js
 ├── components/          — 8 reusable UI components
 └── views/               — 9 page renderers
-    ├── analytics.js     — Volume charts, heat calendar, e1RM, landmarks editor
-    ├── program-detail.js — Volume budget table + audit warnings
+    ├── analytics.js     — Volume charts, muscle status zones, e1RM bars, heat calendar, landmarks editor
+    ├── program-detail.js — Weekly prescription view, volume budget, next phase button, retrospective
     ├── program-wizard.js — 5-step generator wizard
-    └── workout.js       — Set logging with overload recommendations
+    └── workout.js       — Set logging with prescribed weight pre-fill + overload recommendations
 ```
 
-### Database (11 tables)
+### Database (12 tables)
 
 Core: `athletes`, `exercises`, `programs`, `program_sessions`, `program_exercises`, `workout_logs`, `set_logs`, `one_rep_maxes`, `volume_landmarks`
 
 Phase 4: `exercise_muscles` (contribution-weighted exercise-to-muscle mapping), `program_phases` (exists but not yet populated)
 
-Phase 5 will add: `weekly_prescriptions` (per-week per-exercise targets)
+Phase 5: `weekly_prescriptions` (per-week per-exercise targets with e1RM-derived weights)
 
 ### Key Systems
+
+**Weekly Prescriptions** (Phase 5):
+- `weekly_prescriptions` table with FK to `program_exercises`
+- `progression.py` — 5 volume curves (linear/undulating/step/taper/reduced) + linear intensity ramp
+- `prescribe_weight()` — e1RM × intensity_pct / 100, rounded to 2.5 lbs
+- Generator creates prescriptions for every exercise × every week on program generation
+- Idempotent: skips exercises that already have prescriptions (safe for re-runs after volume adjustment)
+
+**Volume-Constrained Generator** (Phase 5):
+- Generate → audit → add isolation exercises → re-audit (max 3 passes)
+- 12 primary muscles audited; only fixes `below_mev` deficits
+- `_MUSCLE_FIX_PATTERNS` maps each muscle to its best isolation movement pattern
+- Exercises added to least-loaded session; max 2 deficits fixed per pass
+
+**Week Advancement** (Phase 5):
+- Auto-advances `current_week` based on `completed_sessions // sessions_per_week + 1`
+- Marks program `completed` when all weeks done
+- Populates `suggested_next_phase` on completion (accumulation → intensification → realization → deload → accumulation)
+
+**Performance Feedback** (Phase 6):
+- Muscle status: actual effective sets vs MEV/MAV/MRV landmarks, zone classification
+- Session compliance: per-exercise sets/weight compliance vs weekly prescriptions
+- Program retrospective: e1RM changes, volume per muscle, RPE trend, body weight change
+- Analytics charts: muscle status zone chart (color-coded bars + landmark lines), e1RM horizontal bar chart
 
 **Exercise-Muscle Contributions** (Phase 4):
 - 16 canonical muscle groups with 0.25-1.0 contribution factors
@@ -205,18 +236,6 @@ Phase 5 will add: `weekly_prescriptions` (per-week per-exercise targets)
 - 4×4 matrix: {strength, hypertrophy, power, endurance} × {accumulation, intensification, realization, deload}
 - Each cell: compound/isolation sets, reps, RPE, rest, volume_progression, intensity_start/end_pct
 
-## Key Design Decisions for Phase 5-6
-
-| Decision | Choice |
-|----------|--------|
-| Weight prescriptions | e1RM × (intensity_pct / 100), rounded to 2.5 lbs. Falls back to RPE-only. |
-| Periodization | Hybrid — single phase per program, suggest next phase on completion |
-| Week progression | Intensity ramps linearly; volume follows curve (linear/undulating/step/taper/reduced) |
-| Prescription storage | New `weekly_prescriptions` table — clean separation from template |
-| Volume adjustment | Generate → audit → add isolation to fix below_mev → re-audit (max 3 passes) |
-| Compliance | Per-exercise: match logged sets to prescribed by exercise_id + session_id |
-| Analytics | Volume vs landmarks chart, session compliance, e1RM progression, program retrospective |
-
 ## Running Locally
 
 ```bash
@@ -229,21 +248,14 @@ Open `http://localhost:8000` — frontend served via FastAPI static file mount.
 ## Tests
 
 ```bash
-python -m pytest tests/ -v
+python3 -m pytest tests/ -v
 ```
 
-Current: 29 tests passing
+Current: 37 tests passing
 - `test_e1rm.py` (7 tests)
 - `test_overload.py` (3 tests)
 - `test_streak.py` (4 tests)
 - `test_seed_muscles.py` (11 tests)
 - `test_volume_budget.py` (4 tests)
-
-## Resume Instructions for Phase 5
-
-1. Read the plan: `docs/plans/2026-02-27-phase5-6-plan.md`
-2. Start with Task 22 (schema) — it unblocks everything else
-3. Tasks 22-23 are independent and can run in parallel
-4. Task 24 depends on both 22 and 23
-5. Continue the pattern: implement → test → commit → next task
-6. Use `superpowers:executing-plans` for implementation
+- `test_progression.py` (7 tests)
+- `test_volume_adjust.py` (1 test)
