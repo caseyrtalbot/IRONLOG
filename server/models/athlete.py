@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class AthleteCreate(BaseModel):
-    id: Optional[int] = 1
+    id: int = 1
     name: str
     age: Optional[int] = None
     body_weight: Optional[float] = None

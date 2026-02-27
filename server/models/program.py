@@ -11,7 +11,7 @@ class ProgramGenerate(BaseModel):
     phase: Literal[
         "accumulation", "intensification", "realization", "deload", "transition"
     ] = "accumulation"
-    split: str = "upper_lower"
+    split: Literal["upper_lower", "push_pull_legs", "full_body"] = "upper_lower"
     weeks: int = 4
     days_per_week: int = 4
     name: Optional[str] = None
