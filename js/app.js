@@ -2,7 +2,7 @@
 // Imports all modules and boots the application
 
 import { state } from './state/store.js';
-import { registerRoute, initRouter, navigate } from './state/router.js';
+import { registerRoute, initRouter } from './state/router.js';
 import { ATHLETE_ID } from './config.js';
 
 // API
@@ -11,7 +11,7 @@ import { getExercises, getMovementPatterns, getMuscleGroups } from './api/exerci
 
 // Lib
 import { $id } from './lib/dom.js';
-import { capitalize } from './lib/format.js';
+
 import { showToast } from './components/toast.js';
 
 // Views
