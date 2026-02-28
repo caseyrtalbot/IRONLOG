@@ -267,6 +267,17 @@ function logSet(exIdx, sIdx) {
     set.weight = w; set.reps = r; set.rpe = rpe;
     set.logged = true;
 
+    // Log-forward: pre-fill next set's weight input with what was just logged
+    const nextSIdx = sIdx + 1;
+    const nextSet = activeWorkout.exercises[exIdx]?.sets[nextSIdx];
+    if (nextSet && !nextSet.logged && w) {
+        nextSet.weight = w;
+        const nextWeightInput = $id(`set-w-${exIdx}-${nextSIdx}`);
+        if (nextWeightInput && !nextWeightInput.value) {
+            nextWeightInput.value = w;
+        }
+    }
+
     const row = $id(`set-row-${exIdx}-${sIdx}`);
     const btn = $id(`set-log-${exIdx}-${sIdx}`);
     if (row) row.classList.add('logged');
