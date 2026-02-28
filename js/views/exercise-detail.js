@@ -3,7 +3,7 @@
 import { state } from '../state/store.js';
 import { activeWorkout } from '../state/workout-state.js';
 import { getE1rm, getOverloadRec } from '../api/analytics.js';
-import { $id, loadingSpinnerSm } from '../lib/dom.js';
+import { $id, loadingSpinnerSm, emptyState } from '../lib/dom.js';
 import { fmtDate, capitalize, formatPattern, dotsHtml } from '../lib/format.js';
 import { destroyChart, createChart } from '../components/charts.js';
 
@@ -139,7 +139,7 @@ export async function viewExerciseDetail(exId) {
             });
         } else {
             const ctx = document.getElementById(`e1rm-chart-${exId}`)?.parentElement;
-            if (ctx) ctx.innerHTML = `<div class="empty-state" style="padding:24px"><h3>No data yet</h3><p>Log some sets to see your progress</p></div>`;
+            if (ctx) ctx.innerHTML = emptyState('No data yet', 'Log some sets to see your progress');
         }
 
         // Current e1RM display

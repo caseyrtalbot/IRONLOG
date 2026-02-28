@@ -2,7 +2,7 @@
 
 import { state } from '../state/store.js';
 import { getDashboard } from '../api/dashboard.js';
-import { $id, loadingSpinner } from '../lib/dom.js';
+import { $id, loadingSpinner, errorState } from '../lib/dom.js';
 import { fmtDate, fmtDuration, formatGoal, formatPhase, getTimeOfDay } from '../lib/format.js';
 import { showToast } from '../components/toast.js';
 
@@ -171,12 +171,7 @@ export async function renderDashboard() {
       </div>`;
     } catch (e) {
         console.error(e);
-        vc.innerHTML = `<div class="view"><div class="empty-state">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-      <h3>Could not load dashboard</h3>
-      <p>Check your connection</p>
-      <button class="btn-primary" onclick="navigate('dashboard')">Retry</button>
-    </div></div>`;
+        vc.innerHTML = `<div class="view">${errorState('Could not load dashboard', 'dashboard')}</div>`;
     }
 }
 

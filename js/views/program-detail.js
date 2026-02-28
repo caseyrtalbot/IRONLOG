@@ -2,7 +2,7 @@
 
 import { state } from '../state/store.js';
 import { getProgram, getProgramRetrospective } from '../api/programs.js';
-import { $id, loadingSpinner } from '../lib/dom.js';
+import { $id, loadingSpinner, emptyState } from '../lib/dom.js';
 import { capitalize, formatGoal, formatPhase } from '../lib/format.js';
 
 let detailWeek = 1;
@@ -294,7 +294,7 @@ export async function selectProgram(programId) {
         ${volumeHtml}
         ${nextPhaseHtml}
         ${retroHtml}
-        ${sessionsHtml || '<div class="empty-state"><h3>No sessions</h3></div>'}
+        ${sessionsHtml || emptyState('No sessions')}
       </div>`;
     } catch (e) {
         vc.innerHTML = `<div class="view"><div class="empty-state"><h3>Error loading program</h3><button class="btn-primary" onclick="navigate('programs')">Back</button></div></div>`;

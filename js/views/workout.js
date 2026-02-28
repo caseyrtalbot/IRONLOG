@@ -9,7 +9,7 @@ import { getOverloadRec } from '../api/analytics.js';
 import { saveWorkout } from '../api/workouts.js';
 import { calcE1rm, SET_TYPES } from '../lib/calc.js';
 import { formatPattern } from '../lib/format.js';
-import { $id, loadingSpinner, loadingSpinnerSm } from '../lib/dom.js';
+import { $id, loadingSpinner, loadingSpinnerSm, emptyState } from '../lib/dom.js';
 import { showToast } from '../components/toast.js';
 import { startWorkoutTimer, stopWorkoutTimer, startRestTimer } from '../components/timer.js';
 import { buildExerciseBlock, buildSetRow } from '../components/inputs.js';
@@ -199,11 +199,7 @@ function renderActiveWorkout() {
 
       <div id="exercise-blocks-container">
         ${exercisesHtml}
-        ${aw.exercises.length === 0 ? `<div class="empty-state" style="padding:32px 24px">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-          <h3>No exercises yet</h3>
-          <p>Add exercises from your program or search the library</p>
-        </div>` : ''}
+        ${aw.exercises.length === 0 ? emptyState('No exercises yet', 'Add exercises from your program or search the library', '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>') : ''}
       </div>
 
       <div style="padding:0 16px 12px;display:flex;gap:8px">
@@ -450,7 +446,7 @@ async function renderExSearchResults(query) {
           </div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5A623" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
         </div>`).join('')
-        : `<div class="empty-state"><h3>No exercises found</h3></div>`;
+        : emptyState('No exercises found');
 }
 
 function filterExSearchModal(q) {

@@ -3,7 +3,7 @@
 import { state } from '../state/store.js';
 import { getAthlete, saveAthlete } from '../api/athlete.js';
 import { getVolumeLandmarks, saveVolumeLandmarks as apiSaveVolumeLandmarks } from '../api/analytics.js';
-import { $id } from '../lib/dom.js';
+import { $id, errorState } from '../lib/dom.js';
 import { capitalize, formatPattern } from '../lib/format.js';
 import { showToast } from '../components/toast.js';
 import { ATHLETE_ID } from '../config.js';
@@ -102,7 +102,7 @@ export async function renderProfile() {
         }
       </div>`;
     } catch (e) {
-        $id('profile-content').innerHTML = `<div class="empty-state"><h3>Error loading profile</h3><button class="btn-primary" onclick="navigate('profile')">Retry</button></div>`;
+        $id('profile-content').innerHTML = errorState('Error loading profile', 'profile');
     }
 }
 

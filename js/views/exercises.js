@@ -2,7 +2,7 @@
 
 import { state } from '../state/store.js';
 import { getExercises, getMovementPatterns, getMuscleGroups } from '../api/exercises.js';
-import { $id, loadingSpinner, loadingSpinnerSm } from '../lib/dom.js';
+import { $id, loadingSpinner, loadingSpinnerSm, emptyState, errorState } from '../lib/dom.js';
 import { capitalize, formatPattern, dotsHtml } from '../lib/format.js';
 
 // ── Main Render ──────────────────────────────────────
@@ -64,7 +64,7 @@ export async function renderExercises() {
     } catch (e) {
         console.error(e);
         $id('ex-filter-bar').innerHTML = '';
-        $id('ex-list').innerHTML = `<div class="empty-state"><h3>Error loading exercises</h3><button class="btn-primary" onclick="navigate('exercises')">Retry</button></div>`;
+        $id('ex-list').innerHTML = errorState('Error loading exercises', 'exercises');
     }
 }
 
@@ -102,7 +102,7 @@ function renderExerciseList() {
     );
 
     if (!exercises.length) {
-        list.innerHTML = `<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h3>No exercises found</h3><p>Try different filters</p></div>`;
+        list.innerHTML = emptyState('No exercises found', 'Try different filters', '<circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>');
         return;
     }
 

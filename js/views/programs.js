@@ -2,7 +2,7 @@
 
 import { state } from '../state/store.js';
 import { getPrograms, deleteProgram } from '../api/programs.js';
-import { $id, loadingSpinner } from '../lib/dom.js';
+import { $id, loadingSpinner, emptyState, errorState } from '../lib/dom.js';
 import { capitalize, formatGoal, formatPhase } from '../lib/format.js';
 import { showToast } from '../components/toast.js';
 
@@ -31,11 +31,7 @@ export async function renderPrograms() {
 
         const list = $id('programs-list');
         if (!programs.length) {
-            list.innerHTML = `<div class="empty-state">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <h3>No programs yet</h3>
-        <p>Generate an AI-powered periodized program tailored to your goals</p>
-      </div>`;
+            list.innerHTML = emptyState('No programs yet', 'Generate an AI-powered periodized program tailored to your goals', '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>');
             return;
         }
 
@@ -59,7 +55,7 @@ export async function renderPrograms() {
         ` : ''}
       </div>`).join('');
     } catch (e) {
-        $id('programs-list').innerHTML = `<div class="empty-state"><h3>Error loading programs</h3><button class="btn-primary" onclick="navigate('programs')">Retry</button></div>`;
+        $id('programs-list').innerHTML = errorState('Error loading programs', 'programs');
     }
 }
 

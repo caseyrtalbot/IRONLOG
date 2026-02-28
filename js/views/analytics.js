@@ -3,7 +3,7 @@
 import { state } from '../state/store.js';
 import { getAnalytics, getAllE1rms, getVolumeLandmarks, saveVolumeLandmarks as apiSaveVolumeLandmarks, getMuscleStatus } from '../api/analytics.js';
 import { getWorkouts } from '../api/workouts.js';
-import { $id, loadingSpinner, loadingSpinnerSm } from '../lib/dom.js';
+import { $id, loadingSpinner, loadingSpinnerSm, emptyState } from '../lib/dom.js';
 import { fmtDate, formatPattern } from '../lib/format.js';
 import { showToast } from '../components/toast.js';
 import { destroyChart } from '../components/charts.js';
@@ -170,7 +170,7 @@ async function loadAnalyticsData() {
 
     } catch (e) {
         console.error(e);
-        container.innerHTML = `<div class="empty-state"><h3>Analytics unavailable</h3><p>Log some workouts first</p></div>`;
+        container.innerHTML = emptyState('Analytics unavailable', 'Log some workouts first');
     }
 }
 
