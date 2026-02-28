@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from server.dependencies import get_db
+from server.routes.helpers import require_found
 from server.services import exercise_service
 
 router = APIRouter()
@@ -40,7 +41,4 @@ def get_exercises(
 
 @router.get("/exercises/{id}")
 def get_exercise(id: int, db=Depends(get_db)):
-    result = exercise_service.get_exercise(db, id)
-    if result is None:
-        raise HTTPException(status_code=404, detail="Exercise not found")
-    return result
+    return require_found(exercise_service.get_exercise(db, id), "Exercise")

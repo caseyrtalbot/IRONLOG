@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from server.dependencies import get_db
+from server.routes.helpers import require_found
 from server.models.program import ProgramGenerate
 from server.services import program_service
 
@@ -19,18 +20,12 @@ def generate_program(body: ProgramGenerate, db=Depends(get_db)):
 
 @router.get("/programs/{id}")
 def get_program(id: int, db=Depends(get_db)):
-    result = program_service.get_program_detail(db, id)
-    if result is None:
-        raise HTTPException(status_code=404, detail="Program not found")
-    return result
+    return require_found(program_service.get_program_detail(db, id), "Program")
 
 
 @router.delete("/programs/{id}")
 def delete_program(id: int, db=Depends(get_db)):
-    result = program_service.delete_program(db, id)
-    if result is None:
-        raise HTTPException(status_code=404, detail="Program not found")
-    return result
+    return require_found(program_service.delete_program(db, id), "Program")
 
 
 @router.get("/programs/{program_id}/sessions/{session_id}/prescriptions")
@@ -40,7 +35,4 @@ def get_session_prescriptions(program_id: int, session_id: int, db=Depends(get_d
 
 @router.get("/programs/{program_id}/retrospective")
 def program_retrospective(program_id: int, db=Depends(get_db)):
-    result = program_service.get_program_retrospective(db, program_id)
-    if not result:
-        raise HTTPException(404, "Program not found")
-    return result
+    return require_found(program_service.get_program_retrospective(db, program_id), "Program")

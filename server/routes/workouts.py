@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from server.dependencies import get_db
+from server.routes.helpers import require_found
 from server.models.workout import WorkoutSave
 from server.services import workout_service
 
@@ -19,15 +20,9 @@ def get_workouts(athlete_id: int = 1, limit: int = 20, offset: int = 0, db=Depen
 
 @router.get("/workouts/{id}")
 def get_workout_detail(id: int, db=Depends(get_db)):
-    result = workout_service.get_workout_detail(db, id)
-    if result is None:
-        raise HTTPException(status_code=404, detail="Workout not found")
-    return result
+    return require_found(workout_service.get_workout_detail(db, id), "Workout")
 
 
 @router.delete("/workouts/{id}")
 def delete_workout(id: int, db=Depends(get_db)):
-    result = workout_service.delete_workout(db, id)
-    if result is None:
-        raise HTTPException(status_code=404, detail="Workout not found")
-    return result
+    return require_found(workout_service.delete_workout(db, id), "Workout")
