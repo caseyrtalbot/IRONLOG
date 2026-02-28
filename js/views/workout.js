@@ -12,7 +12,7 @@ import { formatPattern } from '../lib/format.js';
 import { $id, loadingSpinner, loadingSpinnerSm, emptyState } from '../lib/dom.js';
 import { normalizeArray } from '../lib/normalize.js';
 import { showToast } from '../components/toast.js';
-import { startWorkoutTimer, stopWorkoutTimer, startRestTimer } from '../components/timer.js';
+import { startWorkoutTimer, stopWorkoutTimer, startRestTimer, injectInlineTimer, skipRestTimer } from '../components/timer.js';
 import { buildExerciseBlock, buildSetRow } from '../components/inputs.js';
 import { ATHLETE_ID } from '../config.js';
 
@@ -230,6 +230,9 @@ function renderActiveWorkout() {
         </div>
       </div>
     </div>`;
+
+    // Re-inject inline rest timer if it's running (survives full re-renders)
+    injectInlineTimer();
 }
 
 // ── Set Input / Logging ──────────────────────────────
@@ -291,7 +294,7 @@ function logSet(exIdx, sIdx) {
     }
 
     const restSecs = set.rest_seconds || 120;
-    startRestTimer(restSecs);
+    startRestTimer(restSecs, exIdx, sIdx);
     showToast(`Set logged${e1rm ? ` \u00b7 ${e1rm} lbs e1RM` : ''}`, 'success', 2500);
 }
 
@@ -353,6 +356,7 @@ function discardWorkout() {
     if (!confirm('Discard this workout? All data will be lost.')) return;
     activeWorkout.running = false;
     stopWorkoutTimer();
+    skipRestTimer();
     window.navigate('dashboard');
 }
 
@@ -399,6 +403,7 @@ async function finishWorkout() {
         await saveWorkout(payload);
         activeWorkout.running = false;
         stopWorkoutTimer();
+        skipRestTimer();
         showToast(`Workout saved! ${loggedSets.length} sets logged.`, 'success');
         window.navigate('dashboard');
     } catch (e) {

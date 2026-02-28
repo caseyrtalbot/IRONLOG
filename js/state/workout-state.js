@@ -19,6 +19,8 @@ export const restTimer = {
     totalSeconds: 120,
     remainingSeconds: 120,
     interval: null,
+    anchorExIdx: null,
+    anchorSIdx: null,
 };
 
 export function resetWorkout() {
@@ -44,5 +46,7 @@ export function resetRestTimer() {
         totalSeconds: 120,
         remainingSeconds: 120,
         interval: null,
+        anchorExIdx: null,
+        anchorSIdx: null,
     });
 }

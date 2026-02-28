@@ -996,36 +996,57 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 .modal-overlay.centered { align-items: center; z-index: 9000; }
 
 /* ============================================================
-   REST TIMER
+   INLINE REST TIMER
    ============================================================ */
-#rest-timer-overlay {
-  position: fixed; inset: 0; z-index: 800;
-  background: rgba(0,0,0,0.9);
-  display: flex; align-items: center; justify-content: center;
-  backdrop-filter: blur(8px);
+.inline-rest-timer {
+  margin: 0 16px; border-radius: var(--radius-md);
+  background: var(--bg-card); border: 1px solid var(--border-dim);
+  overflow: hidden; animation: irtSlideIn 0.25s ease forwards;
 }
-.rest-timer-card { text-align: center; }
-.rest-timer-label { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; color: var(--gray-dim); text-transform: uppercase; margin-bottom: 16px; }
-#rest-timer-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; }
-.rest-timer-time {
-  position: absolute; font-family: var(--font-mono); font-size: 32px; font-weight: 700;
-  color: var(--white); letter-spacing: 0.05em;
+.irt-bar {
+  height: 3px; background: var(--bg-elevated); width: 100%;
 }
-.rest-timer-controls { display: flex; gap: 12px; align-items: center; justify-content: center; }
-.rest-btn-adjust {
+.irt-progress {
+  height: 100%; background: var(--amber); transition: width 1s linear;
+}
+.irt-body {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; gap: 10px;
+}
+.irt-time {
+  font-family: var(--font-mono); font-size: 20px; font-weight: 700;
+  color: var(--white); letter-spacing: 0.05em; min-width: 56px;
+}
+.irt-controls { display: flex; gap: 6px; align-items: center; }
+.irt-adjust {
   background: var(--bg-elevated); border: 1px solid var(--border-bright);
-  color: var(--gray-mid); border-radius: var(--radius-md);
-  padding: 10px 18px; font-size: 13px; font-weight: 700;
-  min-height: 44px; cursor: pointer; transition: all var(--transition-fast);
+  color: var(--gray-mid); border-radius: var(--radius-sm);
+  padding: 6px 10px; font-size: 11px; font-weight: 700;
+  min-height: 32px; cursor: pointer; transition: all var(--transition-fast);
 }
-.rest-btn-adjust:active { background: var(--border-normal); }
-.rest-btn-skip {
+.irt-adjust:active { background: var(--border-normal); }
+.irt-skip {
   background: var(--amber); color: #0a0a0a;
-  border-radius: var(--radius-md); padding: 12px 28px;
-  font-size: 14px; font-weight: 800; letter-spacing: 0.1em;
-  min-height: 48px; cursor: pointer; transition: all var(--transition-fast);
+  border-radius: var(--radius-sm); padding: 6px 14px;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.08em;
+  min-height: 32px; cursor: pointer; transition: all var(--transition-fast);
 }
-.rest-btn-skip:active { background: var(--amber-dim); }
+.irt-skip:active { background: var(--amber-dim); }
+.irt-complete {
+  color: var(--green); gap: 8px; justify-content: center;
+  font-size: 13px; font-weight: 700;
+}
+@keyframes irtSlideIn {
+  from { opacity: 0; max-height: 0; }
+  to   { opacity: 1; max-height: 80px; }
+}
+.irt-fade-out {
+  animation: irtFadeOut 0.3s ease forwards;
+}
+@keyframes irtFadeOut {
+  from { opacity: 1; max-height: 80px; }
+  to   { opacity: 0; max-height: 0; }
+}
 
 /* ============================================================
    EXERCISE SEARCH MODAL

@@ -98,27 +98,6 @@
   <!-- Toast Container -->
   <div id="toast-container"></div>
 
-  <!-- Rest Timer Overlay -->
-  <div id="rest-timer-overlay" class="hidden">
-    <div class="rest-timer-card">
-      <div class="rest-timer-label">REST TIMER</div>
-      <div id="rest-timer-ring">
-        <svg viewBox="0 0 100 100" width="140" height="140">
-          <circle cx="50" cy="50" r="44" fill="none" stroke="#1a1a1a" stroke-width="8"/>
-          <circle id="rest-ring-progress" cx="50" cy="50" r="44" fill="none" stroke="#F5A623" stroke-width="8"
-                  stroke-dasharray="276.46" stroke-dashoffset="0" stroke-linecap="round"
-                  transform="rotate(-90 50 50)"/>
-        </svg>
-        <div class="rest-timer-time" id="rest-timer-display">2:00</div>
-      </div>
-      <div class="rest-timer-controls">
-        <button class="rest-btn-adjust" onclick="APP.adjustRestTimer(-15)">-15s</button>
-        <button class="rest-btn-skip" onclick="APP.skipRestTimer()">SKIP</button>
-        <button class="rest-btn-adjust" onclick="APP.adjustRestTimer(15)">+15s</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Onboarding Modal -->
   <div id="onboarding-modal" class="modal-overlay hidden">
     <div class="modal-card onboarding-card">
