@@ -2,7 +2,7 @@
 
 import { state } from '../state/store.js';
 import { getExercises, getMovementPatterns, getMuscleGroups } from '../api/exercises.js';
-import { $id } from '../lib/dom.js';
+import { $id, loadingSpinner, loadingSpinnerSm } from '../lib/dom.js';
 import { capitalize, formatPattern, dotsHtml } from '../lib/format.js';
 
 // ── Main Render ──────────────────────────────────────
@@ -19,10 +19,10 @@ export async function renderExercises() {
         </div>
       </div>
       <div id="ex-filter-bar">
-        <div class="loading-center" style="padding:16px"><div class="spinner spinner-sm"></div></div>
+        ${loadingSpinnerSm()}
       </div>
       <div id="ex-list">
-        <div class="loading-center"><div class="spinner"></div><span>Loading exercises...</span></div>
+        ${loadingSpinner('Loading exercises...')}
       </div>
     </div>`;
 

@@ -9,7 +9,7 @@ import { getOverloadRec } from '../api/analytics.js';
 import { saveWorkout } from '../api/workouts.js';
 import { calcE1rm, SET_TYPES } from '../lib/calc.js';
 import { formatPattern } from '../lib/format.js';
-import { $id } from '../lib/dom.js';
+import { $id, loadingSpinner, loadingSpinnerSm } from '../lib/dom.js';
 import { showToast } from '../components/toast.js';
 import { startWorkoutTimer, stopWorkoutTimer, startRestTimer } from '../components/timer.js';
 import { buildExerciseBlock, buildSetRow } from '../components/inputs.js';
@@ -32,7 +32,7 @@ export async function renderWorkout() {
         <div class="view-sub">Choose a session or build custom</div>
       </div>
       <div class="workout-setup" id="workout-setup-area">
-        <div class="loading-center"><div class="spinner"></div><span>Loading programs...</span></div>
+        ${loadingSpinner('Loading programs...')}
       </div>
     </div>`;
 
@@ -419,7 +419,7 @@ function openExerciseSearch() {
       </div>
     </div>
     <div class="exercise-search-results" id="ex-search-results">
-      <div class="loading-center"><div class="spinner"></div></div>
+      ${loadingSpinnerSm()}
     </div>`;
     document.body.appendChild(modal);
     setTimeout(() => document.getElementById('ex-search-input')?.focus(), 100);

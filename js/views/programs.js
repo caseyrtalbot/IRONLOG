@@ -2,7 +2,7 @@
 
 import { state } from '../state/store.js';
 import { getPrograms, deleteProgram } from '../api/programs.js';
-import { $id } from '../lib/dom.js';
+import { $id, loadingSpinner } from '../lib/dom.js';
 import { capitalize, formatGoal, formatPhase } from '../lib/format.js';
 import { showToast } from '../components/toast.js';
 
@@ -20,7 +20,7 @@ export async function renderPrograms() {
         <button class="btn-primary btn-full" onclick="showProgramGenerator()">+ Generate New Program</button>
       </div>
       <div id="programs-list">
-        <div class="loading-center"><div class="spinner"></div><span>Loading programs...</span></div>
+        ${loadingSpinner('Loading programs...')}
       </div>
     </div>`;
 

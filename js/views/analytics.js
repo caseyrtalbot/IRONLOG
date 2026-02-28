@@ -3,7 +3,7 @@
 import { state } from '../state/store.js';
 import { getAnalytics, getAllE1rms, getVolumeLandmarks, saveVolumeLandmarks as apiSaveVolumeLandmarks, getMuscleStatus } from '../api/analytics.js';
 import { getWorkouts } from '../api/workouts.js';
-import { $id } from '../lib/dom.js';
+import { $id, loadingSpinner, loadingSpinnerSm } from '../lib/dom.js';
 import { fmtDate, formatPattern } from '../lib/format.js';
 import { showToast } from '../components/toast.js';
 import { destroyChart } from '../components/charts.js';
@@ -33,7 +33,7 @@ export async function renderAnalytics() {
         ${[7, 30, 90, 'All'].map(d => `<button class="time-btn ${state.analyticsRange === d ? 'active' : ''}" onclick="setAnalyticsRange(${typeof d === 'number' ? d : "'all'"}, this)">${d}${typeof d === 'number' ? 'd' : ''}</button>`).join('')}
       </div>
       <div id="analytics-content">
-        <div class="loading-center"><div class="spinner"></div><span>Loading analytics...</span></div>
+        ${loadingSpinner('Crunching numbers...')}
       </div>
     </div>`;
 
@@ -54,7 +54,7 @@ function setAnalyticsRange(range, btn) {
 async function loadAnalyticsData() {
     const container = $id('analytics-content');
     if (!container) return;
-    container.innerHTML = `<div class="loading-center"><div class="spinner"></div><span>Crunching numbers...</span></div>`;
+    container.innerHTML = loadingSpinner('Crunching numbers...');
 
     const days = state.analyticsRange === 'all' ? 365 : state.analyticsRange;
 
@@ -156,7 +156,7 @@ async function loadAnalyticsData() {
           <button class="btn-ghost" style="float:right;padding:4px 10px;font-size:10px;min-height:30px" onclick="saveVolumeLandmarks()">Save</button>
         </div>
         <div id="vlm-editor">
-          <div class="loading-center" style="padding:16px"><div class="spinner spinner-sm"></div></div>
+          ${loadingSpinnerSm()}
         </div>
       </div>`;
 

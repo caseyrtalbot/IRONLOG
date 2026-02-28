@@ -2,7 +2,7 @@
 
 import { state } from '../state/store.js';
 import { getDashboard } from '../api/dashboard.js';
-import { $id } from '../lib/dom.js';
+import { $id, loadingSpinner } from '../lib/dom.js';
 import { fmtDate, fmtDuration, formatGoal, formatPhase, getTimeOfDay } from '../lib/format.js';
 import { showToast } from '../components/toast.js';
 
@@ -27,7 +27,7 @@ function viewWorkout(id) {
 
 export async function renderDashboard() {
     const vc = $id('view-container');
-    vc.innerHTML = `<div class="view"><div class="loading-center"><div class="spinner"></div><span>Loading dashboard...</span></div></div>`;
+    vc.innerHTML = `<div class="view">${loadingSpinner('Loading dashboard...')}</div>`;
 
     try {
         const data = await getDashboard();

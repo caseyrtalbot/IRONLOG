@@ -2,7 +2,7 @@
 
 import { state } from '../state/store.js';
 import { getProgram, getProgramRetrospective } from '../api/programs.js';
-import { $id } from '../lib/dom.js';
+import { $id, loadingSpinner } from '../lib/dom.js';
 import { capitalize, formatGoal, formatPhase } from '../lib/format.js';
 
 let detailWeek = 1;
@@ -233,7 +233,7 @@ export async function selectProgram(programId) {
     state.selectedProgramId = programId;
     window._currentProgramId = programId;
     const vc = $id('view-container');
-    vc.innerHTML = `<div class="view"><div class="loading-center"><div class="spinner"></div><span>Loading program...</span></div></div>`;
+    vc.innerHTML = `<div class="view">${loadingSpinner('Loading program...')}</div>`;
 
     try {
         const data = await getProgram(programId);

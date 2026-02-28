@@ -3,7 +3,7 @@
 import { state } from '../state/store.js';
 import { activeWorkout } from '../state/workout-state.js';
 import { getE1rm, getOverloadRec } from '../api/analytics.js';
-import { $id } from '../lib/dom.js';
+import { $id, loadingSpinnerSm } from '../lib/dom.js';
 import { fmtDate, capitalize, formatPattern, dotsHtml } from '../lib/format.js';
 import { destroyChart, createChart } from '../components/charts.js';
 
@@ -56,7 +56,7 @@ export async function viewExerciseDetail(exId) {
       <div class="section">
         <div class="section-title" style="margin-bottom:8px">VOLUME LANDMARKS</div>
         <div class="card" id="vlm-detail">
-          <div class="loading-center" style="padding:16px"><div class="spinner spinner-sm"></div></div>
+          ${loadingSpinnerSm()}
         </div>
       </div>
       <div class="section">
@@ -70,7 +70,7 @@ export async function viewExerciseDetail(exId) {
       <div class="section" id="overload-rec-section">
         <div class="section-title" style="margin-bottom:8px">PROGRESSIVE OVERLOAD</div>
         <div class="card" id="overload-detail">
-          <div class="loading-center" style="padding:16px"><div class="spinner spinner-sm"></div></div>
+          ${loadingSpinnerSm()}
         </div>
       </div>
       ${activeWorkout.running ? `
