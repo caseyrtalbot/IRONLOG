@@ -3,6 +3,7 @@
 import { state } from '../state/store.js';
 import { getDashboard } from '../api/dashboard.js';
 import { $id, loadingSpinner, errorState } from '../lib/dom.js';
+import { normalizeName, normalizeE1rm } from '../lib/normalize.js';
 import { fmtDate, fmtDuration, formatGoal, formatPhase, getTimeOfDay } from '../lib/format.js';
 import { showToast } from '../components/toast.js';
 
@@ -40,8 +41,8 @@ export async function renderDashboard() {
         const totalWorkouts = data.totals?.total_workouts || data.total_workouts || 0;
         const recentPRs = (data.recent_prs || []).map(pr => ({
             ...pr,
-            exercise_name: pr.exercise_name || pr.name,
-            estimated_1rm: pr.estimated_1rm ?? pr.best_e1rm,
+            exercise_name: normalizeName(pr),
+            estimated_1rm: normalizeE1rm(pr),
         }));
         const recentWorkouts = data.recent_workouts || [];
         const activeProgram = data.active_program || null;

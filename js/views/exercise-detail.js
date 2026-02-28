@@ -4,6 +4,7 @@ import { state } from '../state/store.js';
 import { activeWorkout } from '../state/workout-state.js';
 import { getE1rm, getOverloadRec } from '../api/analytics.js';
 import { $id, loadingSpinnerSm, emptyState } from '../lib/dom.js';
+import { normalizeArray, normalizeE1rm } from '../lib/normalize.js';
 import { fmtDate, capitalize, formatPattern, dotsHtml } from '../lib/format.js';
 import { destroyChart, createChart } from '../components/charts.js';
 
@@ -84,9 +85,9 @@ export async function viewExerciseDetail(exId) {
     // Load e1RM trend
     try {
         const e1rmData = await getE1rm(exId, 90);
-        const history = (e1rmData.history || e1rmData.trend || []).map(h => ({
+        const history = normalizeArray(e1rmData.history || e1rmData.trend, '').map(h => ({
             ...h,
-            estimated_1rm: h.estimated_1rm ?? h.e1rm,
+            estimated_1rm: normalizeE1rm(h),
         }));
         // Volume landmark display
         const vlmEl = $id('vlm-detail');

@@ -3,6 +3,7 @@
 import { state } from '../state/store.js';
 import { getPrograms, deleteProgram } from '../api/programs.js';
 import { $id, loadingSpinner, emptyState, errorState } from '../lib/dom.js';
+import { normalizeArray } from '../lib/normalize.js';
 import { capitalize, formatGoal, formatPhase } from '../lib/format.js';
 import { showToast } from '../components/toast.js';
 
@@ -26,7 +27,7 @@ export async function renderPrograms() {
 
     try {
         const res = await getPrograms();
-        const programs = res.programs || (Array.isArray(res) ? res : []);
+        const programs = normalizeArray(res, 'programs');
         state.programs = programs;
 
         const list = $id('programs-list');

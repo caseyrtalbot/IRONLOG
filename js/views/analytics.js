@@ -4,6 +4,7 @@ import { state } from '../state/store.js';
 import { getAnalytics, getAllE1rms, getVolumeLandmarks, saveVolumeLandmarks as apiSaveVolumeLandmarks, getMuscleStatus } from '../api/analytics.js';
 import { getWorkouts } from '../api/workouts.js';
 import { $id, loadingSpinner, loadingSpinnerSm, emptyState } from '../lib/dom.js';
+import { normalizeArray, normalizeName, normalizeE1rm } from '../lib/normalize.js';
 import { fmtDate, formatPattern } from '../lib/format.js';
 import { showToast } from '../components/toast.js';
 import { destroyChart } from '../components/charts.js';
@@ -68,20 +69,20 @@ async function loadAnalyticsData() {
             getMuscleStatus(days).catch(() => []),
         ]);
 
-        const workouts = Array.isArray(workoutsData) ? workoutsData : (workoutsData.workouts || []);
-        const e1rms = (Array.isArray(e1rmData) ? e1rmData : (e1rmData.exercises || [])).map(e => ({
+        const workouts = normalizeArray(workoutsData, 'workouts');
+        const e1rms = normalizeArray(e1rmData, 'exercises').map(e => ({
             ...e,
-            exercise_name: e.exercise_name || e.name,
-            estimated_1rm: e.estimated_1rm ?? e.e1rm,
+            exercise_name: normalizeName(e),
+            estimated_1rm: normalizeE1rm(e),
         }));
-        const volumePoints = Array.isArray(volumeData) ? volumeData : (volumeData?.data || []);
-        const musclePoints = (Array.isArray(muscleData) ? muscleData : (muscleData?.data || [])).map(p => ({
+        const volumePoints = normalizeArray(volumeData, 'data');
+        const musclePoints = normalizeArray(muscleData, 'data').map(p => ({
             ...p,
             muscle_group: p.muscle_group || p.primary_muscles,
             sets: p.sets ?? p.total_sets,
             volume: p.volume ?? p.total_volume,
         }));
-        const freqPoints = (Array.isArray(freqData) ? freqData : (freqData?.data || [])).map(p => ({
+        const freqPoints = normalizeArray(freqData, 'data').map(p => ({
             ...p,
             count: p.count ?? p.session_count ?? p.total_sets,
         }));
@@ -312,7 +313,7 @@ async function loadVolumeEditor() {
     if (!editor) return;
     try {
         const res = await getVolumeLandmarks();
-        const landmarks = Array.isArray(res) ? res : (res.landmarks || []);
+        const landmarks = normalizeArray(res, 'landmarks');
         if (!landmarks.length) { editor.innerHTML = `<div class="text-dim text-sm">No volume landmarks configured. Go to Profile to set them up.</div>`; return; }
         editor.innerHTML = `<div>${landmarks.map(l => `
       <div class="vlm-editor-row">

@@ -10,6 +10,7 @@ import { saveWorkout } from '../api/workouts.js';
 import { calcE1rm, SET_TYPES } from '../lib/calc.js';
 import { formatPattern } from '../lib/format.js';
 import { $id, loadingSpinner, loadingSpinnerSm, emptyState } from '../lib/dom.js';
+import { normalizeArray } from '../lib/normalize.js';
 import { showToast } from '../components/toast.js';
 import { startWorkoutTimer, stopWorkoutTimer, startRestTimer } from '../components/timer.js';
 import { buildExerciseBlock, buildSetRow } from '../components/inputs.js';
@@ -41,7 +42,7 @@ export async function renderWorkout() {
             getPrograms(),
             Promise.resolve(state.athlete || await getAthlete()),
         ]);
-        const programs = programsRes.programs || (Array.isArray(programsRes) ? programsRes : []);
+        const programs = normalizeArray(programsRes, 'programs');
         const activePrograms = programs.filter(p => p.status === 'active');
 
         let sessionsHtml = '';
@@ -117,7 +118,7 @@ async function startProgramSession(programId, sessionId) {
         // Fetch weekly prescriptions for pre-filling weights
         const prescriptions = await getSessionPrescriptions(programId, sessionId).catch(() => []);
         const prescriptionMap = {};
-        for (const p of (Array.isArray(prescriptions) ? prescriptions : prescriptions.prescriptions || [])) {
+        for (const p of normalizeArray(prescriptions, 'prescriptions')) {
             prescriptionMap[p.exercise_id] = p;
         }
 

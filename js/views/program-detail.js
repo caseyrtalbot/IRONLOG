@@ -3,6 +3,7 @@
 import { state } from '../state/store.js';
 import { getProgram, getProgramRetrospective } from '../api/programs.js';
 import { $id, loadingSpinner, emptyState } from '../lib/dom.js';
+import { normalizeArray, normalizeName } from '../lib/normalize.js';
 import { capitalize, formatGoal, formatPhase } from '../lib/format.js';
 
 let detailWeek = 1;
@@ -43,7 +44,7 @@ function renderExerciseRow(pe, selectedWeek) {
     return `
     <div class="program-exercise-row">
       <div style="flex:1;min-width:0">
-        <div class="pe-row-name">${pe.superset_group ? `<span class="superset-label">${pe.superset_group}</span>` : ''}${pe.exercise_name || pe.name || '\u2014'}</div>
+        <div class="pe-row-name">${pe.superset_group ? `<span class="superset-label">${pe.superset_group}</span>` : ''}${normalizeName(pe)}</div>
         <div class="pe-row-prescription">${sets} \u00d7 ${reps} @ RPE ${rpe}</div>
       </div>
       <div style="text-align:right">

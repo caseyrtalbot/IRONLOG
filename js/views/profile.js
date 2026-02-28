@@ -4,6 +4,7 @@ import { state } from '../state/store.js';
 import { getAthlete, saveAthlete } from '../api/athlete.js';
 import { getVolumeLandmarks, saveVolumeLandmarks as apiSaveVolumeLandmarks } from '../api/analytics.js';
 import { $id, errorState } from '../lib/dom.js';
+import { normalizeArray } from '../lib/normalize.js';
 import { capitalize, formatPattern } from '../lib/format.js';
 import { showToast } from '../components/toast.js';
 import { ATHLETE_ID } from '../config.js';
@@ -27,7 +28,7 @@ export async function renderProfile() {
         const athlete = state.athlete || await getAthlete();
         state.athlete = athlete;
         const [vlmRes] = await Promise.all([getVolumeLandmarks().catch(() => [])]);
-        const landmarks = Array.isArray(vlmRes) ? vlmRes : (vlmRes.landmarks || []);
+        const landmarks = normalizeArray(vlmRes, 'landmarks');
 
         const content = $id('profile-content');
         content.innerHTML = `
