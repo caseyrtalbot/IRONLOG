@@ -35,19 +35,3 @@ def rpe_to_percentage(rpe, reps):
     if rpe_key in chart and rep_key in chart[rpe_key]:
         return chart[rpe_key][rep_key]
     return 75.0
-
-
-def calculate_training_weight(e1rm, rpe, reps):
-    """Calculate recommended training weight from e1RM, target RPE, and rep count."""
-    pct = rpe_to_percentage(rpe, reps) / 100.0
-    return round(e1rm * pct, 1)
-
-
-def calculate_volume_load(sets_data):
-    """Calculate total volume load (sets x reps x weight) from set logs."""
-    total = 0
-    for s in sets_data:
-        w = s.get('weight', 0) or 0
-        r = s.get('reps', 0) or 0
-        total += w * r
-    return round(total, 1)

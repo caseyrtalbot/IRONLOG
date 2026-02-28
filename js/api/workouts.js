@@ -9,10 +9,6 @@ export function getWorkouts(limit = 20) {
     return get('workouts', { athlete_id: ATHLETE_ID, limit });
 }
 
-export function getWorkoutDetail(id) {
-    return get(`workouts/${id}`);
-}
-
 export function deleteWorkout(id) {
     return del(`workouts/${id}`);
 }

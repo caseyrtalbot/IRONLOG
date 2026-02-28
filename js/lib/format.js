@@ -2,13 +2,6 @@
 
 import { GOAL_INFO, PHASE_INFO } from './calc.js';
 
-export function rpeColor(rpe) {
-  if (!rpe) return '';
-  if (rpe <= 7) return 'rpe-green';
-  if (rpe <= 8.5) return 'rpe-amber';
-  return 'rpe-red';
-}
-
 export function fmtDate(dateStr) {
   if (!dateStr) return '\u2014';
   const d = new Date(dateStr.replace(' ', 'T'));

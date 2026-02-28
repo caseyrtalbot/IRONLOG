@@ -1,4 +1,4 @@
-from server.algorithms.e1rm import estimate_1rm, rpe_to_percentage, calculate_volume_load
+from server.algorithms.e1rm import estimate_1rm, rpe_to_percentage
 
 
 def test_estimate_1rm_basic():
@@ -29,12 +29,3 @@ def test_rpe_to_percentage_known_values():
     assert rpe_to_percentage(10, 1) == 100
     assert rpe_to_percentage(8, 5) == 81.1
     assert rpe_to_percentage(6, 10) == 62.6
-
-
-def test_calculate_volume_load():
-    sets = [
-        {"weight": 225, "reps": 5},
-        {"weight": 225, "reps": 5},
-        {"weight": 225, "reps": 4},
-    ]
-    assert calculate_volume_load(sets) == 3150.0

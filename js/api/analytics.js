@@ -25,14 +25,7 @@ export function saveVolumeLandmarks(data) {
     return post('analytics/volume-landmarks', data);
 }
 
-export function getPhaseConfig(goal, phase) {
-    return get('analytics/phase-config', { goal, phase });
-}
-
 export function getMuscleStatus(days = 7) {
     return get('analytics/muscle-status', { athlete_id: ATHLETE_ID, days });
 }
 
-export function getCompliance(programId) {
-    return get('analytics/compliance', { athlete_id: ATHLETE_ID, program_id: programId });
-}
